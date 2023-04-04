@@ -11,3 +11,6 @@ buildNumber.properties
 .mvn/wrapper/maven-wrapper.jar
 /.idea
 *.iml
+/schxslt
+/src/main/resources/daisy3/compiled
+/src/main/resources/dtbook/compiled
