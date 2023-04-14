@@ -14,8 +14,8 @@
         we need to double check that all @id values are unique
     -->
     <pattern id="id-unique">
-        <let name="id-set" value="//*[@id]"/>
         <rule context="*[@id]">
+            <let name="id-set" value="//*[@id]"/>
             <assert test="count($id-set[@id = current()/@id]) = 1">Duplicate ID '<value-of
                     select="current()/@id"/>'</assert>
         </rule>

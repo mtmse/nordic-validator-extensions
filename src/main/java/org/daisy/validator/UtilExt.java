@@ -25,53 +25,6 @@ import java.util.regex.Pattern;
 public class UtilExt extends Util {
     private static final Logger logger = Logger.getLogger(UtilExt.class.getName());
 
-    private static final Pattern milliPattern = Pattern.compile(
-        "(ntp=)?(\\d{1,2}:)?(\\d{1,2}:)?(\\d+)(\\.\\d+)?(ms|h|min|s)?"
-    );
-
-    public static final long parseMilliSeconds(String s) {
-
-        Matcher m = milliPattern.matcher(s);
-        if (m.find()) {
-            double val = 0;
-
-            if (m.group(2) != null) {
-                val += Long.parseLong(m.group(2).substring(0, m.group(2).length() - 1)) * 3600;
-            }
-            if (m.group(3) != null) {
-                val += Long.parseLong(m.group(3).substring(0, m.group(3).length() - 1)) * 60;
-            }
-            if (m.group(4) != null) {
-                val += Long.parseLong(m.group(4));
-            }
-            if (m.group(5) != null) {
-                val += Double.parseDouble(m.group(5));
-            }
-
-            if (m.group(6) != null) {
-                if ("h".equals(m.group(6))) {
-                    val *= 3600 * 1000;
-                } else if ("min".equals(m.group(6))) {
-                    val *= 60 * 1000;
-                } else if ("ms".equals(m.group(6))) {
-                } else {
-                    val *= 1000;
-                }
-            } else {
-                val *= 1000;
-            }
-
-            return Math.round(val);
-        }
-        return 0;
-    }
-
-    public static String formatTime(long time) {
-        Instant inst = Instant.ofEpochMilli(time);
-        LocalTime localTime = LocalTime.ofInstant(inst, ZoneId.of("UTC"));
-        return localTime.toString();
-    }
-
     public static void writeFileWithoutDoctype(File outputFile, InputStream inputStream) throws Exception {
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
         String line;
@@ -81,9 +34,8 @@ public class UtilExt extends Util {
             fileContent += "\n";
         }
 
-        fileContent = fileContent.replaceAll(
-                "(?i)<!DOCTYPE[^<>]*(?:<!ENTITY[^<>]*>[^<>]*)?>", ""
-        );
+        fileContent = fileContent
+            .replaceAll("(?i)<!DOCTYPE[^<>]*(?:<!ENTITY[^<>]*>[^<>]*)?>", "");
 
         BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
         bw.write(fileContent);
