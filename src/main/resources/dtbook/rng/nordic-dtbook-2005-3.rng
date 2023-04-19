@@ -899,7 +899,7 @@
     <define name="block">
         <choice>
             <ref name="p"/>
-            <ref name="list"/>
+            <ref name="dtb.list"/>
             <ref name="dl"/>
             <ref name="div"/>
             <ref name="blockquote"/>
@@ -934,7 +934,7 @@
     <define name="blocknoimggroup">
         <choice>
             <ref name="p"/>
-            <ref name="list"/>
+            <ref name="dtb.list"/>
             <ref name="dl"/>
             <ref name="div"/>
             <ref name="blockquote"/>
@@ -3176,7 +3176,7 @@
             <zeroOrMore>
                 <choice>
                     <ref name="inline"/>
-                    <ref name="list"/>
+                    <ref name="dtb.list"/>
                     <ref name="dl"/>
                 </choice>
             </zeroOrMore>
@@ -3450,7 +3450,7 @@
     has explicitly distinguished list element types: ol for ordered,
     and ul for unordered, but not pl for preformatted.
   -->
-    <define name="list">
+    <define name="dtb.list">
         <element name="list">
             <ref name="attlist.list"/>
             <oneOrMore>
