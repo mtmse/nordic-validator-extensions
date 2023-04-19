@@ -145,6 +145,7 @@ public class DTBookFiles {
 
     private void validateFile(String filename, String validationType) throws Exception {
         if(completionService == null) return;
+
         completionService.submit(new ValidateFile(
             dtbookDir,
             filename,
@@ -156,28 +157,10 @@ public class DTBookFiles {
         completionService.submit(new TransformFile(
             dtbookDir,
             filename,
-                GuidelineExt.MATHML,
+            GuidelineExt.MATHML,
             new File(schemaDir, guideline.getSchema(GuidelineExt.MATHML).getFilename())
         ));
         submittedWork++;
-
-        if (guideline instanceof GuidelineDTBookNordic) {
-            completionService.submit(new ValidateFile(
-                    dtbookDir,
-                    filename,
-                    new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOKNORDIC2005_3).getFilename()),
-                    GuidelineDTBookNordic.DTBOOKNORDIC2005_3
-            ));
-            submittedWork++;
-
-            completionService.submit(new TransformFile(
-                    dtbookDir,
-                    filename,
-                    GuidelineExt.CONTENT_FILES,
-                    new File(schemaDir, guideline.getSchema(GuidelineExt.CONTENT_FILES).getFilename())
-            ));
-            submittedWork++;
-        }
     }
 
     public void unpackSchemas() throws Exception {
@@ -213,7 +196,27 @@ public class DTBookFiles {
         List[] res = findLinks(db, xPathExpRel, xPathExpId, dtbookFile);
         uris.addAll(res[0]);
         ids.addAll(res[1]);
-        validateFile(dtbookFile, validationType);
+
+        if (guideline instanceof GuidelineDTBookNordic) {
+            completionService.submit(new ValidateFile(
+                    dtbookDir,
+                    dtbookFile,
+                    new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOKNORDIC2005_3).getFilename()),
+                    GuidelineDTBookNordic.DTBOOKNORDIC2005_3
+            ));
+            submittedWork++;
+
+            completionService.submit(new TransformFile(
+                    dtbookDir,
+                    dtbookFile,
+                    GuidelineExt.CONTENT_FILES,
+                    new File(schemaDir, guideline.getSchema(GuidelineExt.CONTENT_FILES).getFilename())
+            ));
+            submittedWork++;
+        } else {
+            validateFile(dtbookFile, validationType);
+        }
+
         for (String smilFile : smilFiles) {
             res = findLinks(db, xPathExpRel, xPathExpId, smilFile);
             uris.addAll(res[0]);
@@ -313,7 +316,11 @@ public class DTBookFiles {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n = nodeList.item(i);
             String s = n.getNodeValue();
-            smilFiles.add(s.substring(0, s.indexOf("#")));
+            if (s.contains("#")) {
+                smilFiles.add(s.substring(0, s.indexOf("#")));
+            } else {
+                smilFiles.add(s);
+            }
         }
 
         XPathExpression xPathExpTotalElapsedTime = xPath.compile("//meta[@name='ncc:totalElapsedTime']/@content");
