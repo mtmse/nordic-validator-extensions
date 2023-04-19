@@ -874,7 +874,7 @@
             <ref name="prodnote"/>
             <ref name="sidebar"/>
             <ref name="note"/>
-            <ref name="annotation"/>
+            <ref name="dtb.annotation"/>
             <ref name="externalblock"/>
         </choice>
     </define>
@@ -2326,7 +2326,7 @@
     no explicit reference to it inserted in the text. Any local
     reference to <annotation id="xxx"> is by <annoref idref="#xxx">.
   -->
-    <define name="annotation">
+    <define name="dtb.annotation">
         <element name="annotation">
             <ref name="attlist.annotation"/>
             <oneOrMore>
@@ -2422,7 +2422,7 @@
                     <ref name="noteref"/>
                     <ref name="annoref"/>
                     <ref name="note"/>
-                    <ref name="annotation"/>
+                    <ref name="dtb.annotation"/>
                     <ref name="p"/>
                     <ref name="blockquote"/>
                     <ref name="img"/>
