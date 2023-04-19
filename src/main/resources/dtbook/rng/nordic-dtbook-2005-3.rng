@@ -776,17 +776,15 @@
 <!-- jpritchett@rfbd.org:  2006-07-06.  Removed definition of %StyleSheet, since it is no longer needed -->
 <grammar ns="http://www.daisy.org/z3986/2005/dtbook/" xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0" xmlns="http://relaxng.org/ns/structure/1.0"
     datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
-    
-    <include href="http://www.daisy.org/pipeline/modules/mathml-utils/mathml3.rng">
-        <a:documentation>MathML 3.0</a:documentation>
-        <start combine="choice">
-            <notAllowed/>
-        </start>
-        <define name="anyElement">
-            <ref name="flow"/>
+
+
+    <include href="../mathml3.rng" ns="http://www.w3.org/1998/Math/MathML">
+        <!-- Refine the datatypes used for IDs and IDREFs  -->
+        <define name="math.id.type">
+            <data type="NCName"></data>
         </define>
     </include>
-    
+
     <start>
         <ref name="dtbook"/>
     </start>
