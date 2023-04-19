@@ -16,6 +16,8 @@ public abstract class GuidelineExt extends Guideline {
     public static final String DTBOOK2005_2_MATHML_3 = "dtbook-2005-2-mathml-3";
     public static final String DTBOOK2005_3_MATHML_2 = "dtbook-2005-3-mathml-2";
     public static final String DTBOOK2005_3_MATHML_3 = "dtbook-2005-3-mathml-3";
+    public static final String DTBOOKNORDIC2005_3 = "dtbook-2005-3-nordic";
+
     public static final String MATHML = "mathml";
 
     public JSONObject getSchemaInformationJSON() {

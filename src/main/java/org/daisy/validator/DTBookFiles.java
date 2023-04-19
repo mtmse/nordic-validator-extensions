@@ -2,6 +2,7 @@ package org.daisy.validator;
 
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.Guideline;
+import org.daisy.validator.schemas.GuidelineDTBookNordic;
 import org.daisy.validator.schemas.GuidelineExt;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -159,12 +160,33 @@ public class DTBookFiles {
             new File(schemaDir, guideline.getSchema(GuidelineExt.MATHML).getFilename())
         ));
         submittedWork++;
+
+        if (guideline instanceof GuidelineDTBookNordic) {
+            completionService.submit(new ValidateFile(
+                    dtbookDir,
+                    filename,
+                    new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOKNORDIC2005_3).getFilename()),
+                    GuidelineDTBookNordic.DTBOOKNORDIC2005_3
+            ));
+            submittedWork++;
+
+            completionService.submit(new TransformFile(
+                    dtbookDir,
+                    filename,
+                    GuidelineExt.CONTENT_FILES,
+                    new File(schemaDir, guideline.getSchema(GuidelineExt.CONTENT_FILES).getFilename())
+            ));
+            submittedWork++;
+        }
     }
 
     public void unpackSchemas() throws Exception {
         UtilExt.unpackSchemaDir(guideline.getSchemaPath(), schemaDir);
         UtilExt.unpackSchemaDir("mathml3", schemaDir);
         UtilExt.unpackSchemaDir("daisy202", schemaDir);
+        if (guideline instanceof GuidelineDTBookNordic) {
+            UtilExt.unpackSchemaDir("2015-1", schemaDir);
+        }
     }
 
     public void cleanUp() {
