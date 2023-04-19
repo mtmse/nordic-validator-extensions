@@ -4,6 +4,7 @@ public enum Format {
     EPUB("epub"),
     PEF("pef"),
     DTBOOK("dtbook"),
+    DTBOOK_NORDIC("dtbook_nordic"),
     DAISY202("daisy202"),
     DAISY3("daisy3");
 
