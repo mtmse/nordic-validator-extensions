@@ -206,6 +206,14 @@ public class DTBookFiles {
             ));
             submittedWork++;
 
+            completionService.submit(new ValidateFile(
+                    dtbookDir,
+                    dtbookFile,
+                    new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOK2005_3_MATHML_3).getFilename()),
+                    GuidelineDTBookNordic.DTBOOK2005_3_MATHML_3
+            ));
+            submittedWork++;
+
             completionService.submit(new TransformFile(
                     dtbookDir,
                     dtbookFile,
@@ -316,6 +324,9 @@ public class DTBookFiles {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n = nodeList.item(i);
             String s = n.getNodeValue();
+            if (s.contains(":")) {
+                continue;
+            }
             if (s.contains("#")) {
                 smilFiles.add(s.substring(0, s.indexOf("#")));
             } else {
