@@ -1,0 +1,6 @@
+Version 1.0.6
+
+* Replace all instances of obf with opf.
+* Checking for the presence of doctype.
+* Fixing issue with cover image being in PNG format.
+* Fixing the time parsing issues, and adding the epubcheck error code information.
