@@ -19,6 +19,7 @@ public abstract class GuidelineExt extends Guideline {
     public static final String DTBOOKNORDIC2005_3 = "dtbook-2005-3-nordic";
 
     public static final String MATHML = "mathml";
+    public static final String AUDIO_CHECK = "audio-check";
 
     public JSONObject getSchemaInformationJSON() {
         JSONObject allSchemas = new JSONObject();

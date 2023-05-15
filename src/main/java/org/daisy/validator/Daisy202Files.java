@@ -1,5 +1,6 @@
 package org.daisy.validator;
 
+import org.daisy.validator.audiocheck.AudioClip;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.Guideline;
 import org.daisy.validator.schemas.GuidelineExt;
@@ -53,6 +54,7 @@ public class Daisy202Files {
     private final File daisyDir = UtilExt.createTempDirectory();
     private final File schemaDir = UtilExt.createTempDirectory();
     private final Guideline guideline;
+    private List<AudioClip> audioClips = new ArrayList();
 
     public Daisy202Files(String filename, String issue) throws Exception {
         this(filename, issue, null);
@@ -78,12 +80,12 @@ public class Daisy202Files {
             }
             if (ze.isDirectory()) {
                 new File(daisyDir, ze.getName()).mkdirs();
-            } else if (ze.getName().equals("ncc.html")) {
+            } else if (ze.getName().equals("ncc.html") || ze.getName().endsWith("/ncc.html")) {
                 nccFile = ze.getName();
                 UtilExt.writeFileWithoutDoctype(
                     new File(daisyDir, nccFile), zipFile.getInputStream(zipFile.getEntry(nccFile))
                 );
-            } else if(ze.getName().equals("master.smil")) {
+            } else if (ze.getName().equals("master.smil") || ze.getName().endsWith("/master.smil")) {
                 masterSmil = ze.getName();
                 UtilExt.writeFileWithoutDoctype(
                     new File(daisyDir, masterSmil), zipFile.getInputStream(zipFile.getEntry(masterSmil))
@@ -143,7 +145,7 @@ public class Daisy202Files {
         }
     }
 
-    public void validate() throws Exception {
+    public void validate(boolean validateAudioClipLength) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -184,6 +186,9 @@ public class Daisy202Files {
             if (contentFiles.contains(uri.getLocation())) {
                 continue;
             }
+            if (smilFiles.contains(uri.getLocation())) {
+                continue;
+            }
             if (ids.contains(uri.getLocation())) {
                 continue;
             }
@@ -191,7 +196,7 @@ public class Daisy202Files {
             errorList.add(uri);
         }
 
-        validateAudio();
+        validateAudio(validateAudioClipLength);
 
         int received = 0;
 
@@ -236,7 +241,7 @@ public class Daisy202Files {
     }
 
 
-    private void validateAudio() throws Exception {
+    private void validateAudio(boolean validateAudioClipLength) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -266,7 +271,16 @@ public class Daisy202Files {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n = nodeList.item(i);
             String s = n.getNodeValue();
-            smilFiles.add(s.substring(0, s.indexOf("#")));
+            if (s.contains(":")) {
+                continue;
+            }
+            if (s.contains("#")) {
+                String filename = Util.getRelativeFilename(nccFile, s);
+                smilFiles.add(filename.substring(0, filename.indexOf("#")));
+            } else {
+                String filename = Util.getRelativeFilename(nccFile, s);
+                smilFiles.add(filename);
+            }
         }
 
         XPathExpression xPathExpTotalElapsedTime = xPath.compile("//meta[@name='ncc:totalElapsedTime']/@content");
@@ -283,17 +297,21 @@ public class Daisy202Files {
             } catch (SAXParseException saxEx) {
                 String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
                 errorList.add(
-                        new Issue("", "[" + Guideline.XHTML + "] " + lineIn + saxEx.getMessage(),
-                                nccFile,
-                                Guideline.XHTML,
-                                Issue.ERROR_ERROR
-                        ));
+                    new Issue("", "[" + Guideline.XHTML + "] " + lineIn + saxEx.getMessage(),
+                        nccFile,
+                        Guideline.XHTML,
+                        Issue.ERROR_ERROR
+                    ));
                 continue;
             }
 
             elapsedTime = validateSmilFile(
                 smilDocument, smilFile, xPathExpTotalElapsedTime, xPathExptimeInThisSmil, xPathExpAudio, elapsedTime
             );
+        }
+
+        if (validateAudioClipLength) {
+            AudioClip.validateAudioClips(audioClips, daisyDir, errorList, GuidelineExt.NCC);
         }
 
         if (Math.abs(elapsedTime - totalTime) > 500) {
@@ -348,12 +366,17 @@ public class Daisy202Files {
                 beginning = UtilExt.parseMilliSeconds(el.getAttribute("clip-begin"));
                 ending = UtilExt.parseMilliSeconds(el.getAttribute("clip-end"));
             }
-            if (beginning > audioFiles.get(el.getAttribute("src"))) {
+
+            String filename = Util.getRelativeFilename(smilFile, el.getAttribute("src"));
+
+            if (!audioFiles.containsKey(filename) || beginning > audioFiles.get(filename)) {
                 createSmilError(smilFile, "Beginning of clip is not in audio " + el.getAttribute("src"));
             }
-            if (ending > audioFiles.get(el.getAttribute("src"))) {
+            if (!audioFiles.containsKey(filename) || ending > audioFiles.get(filename)) {
                 createSmilError(smilFile, "Ending of clip is not in audio " + el.getAttribute("src"));
             }
+
+            audioClips.add(new AudioClip(smilFile, el, beginning, ending));
             timeInThisSmilFile += ending - beginning;
         }
 
@@ -402,7 +425,7 @@ public class Daisy202Files {
         NodeList nodeList = (NodeList) xPathExpRel.evaluate(xmlDocument, XPathConstants.NODESET);
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n  = nodeList.item(i);
-            String filename = new File(new File(file).getParent(), n.getNodeValue()).getPath();
+            String filename = Util.getRelativeFilename(file, n.getNodeValue());
             uris[0].add(new Issue(
                 filename,
                 "[" +GuidelineExt.SMIL + "] The reference " + filename + " points to a id in the target resource that does not exist.",

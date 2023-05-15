@@ -68,13 +68,39 @@ public class UtilExt extends Util {
             }
             jar.close();
         } else {
-            final URL url = EPUBFiles.class.getResource("/" + schemaResource);
-            if (url != null) {
+            final URL url = UtilExt.class.getResource("/" + schemaResource);
+
+            if (url != null && url.getProtocol().equals("file")) {
                 try {
                     final File apps = new File(url.toURI());
                     unpackDirectory(apps, url, schemaDir, schemaResource);
                 } catch (URISyntaxException ex) {
                     logger.fatal(ex.getMessage(), ex);
+                }
+            } else {
+                final File jarFile2 = new File(Util.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+
+                if(jarFile2.isFile()) {  // Run with JAR file
+                    final JarFile jar = new JarFile(jarFile2);
+                    final Enumeration<JarEntry> entries = jar.entries();
+                    while (entries.hasMoreElements()) {
+                        JarEntry jEntry = entries.nextElement();
+                        String name = jEntry.getName();
+                        if (name.startsWith(schemaResource + "/")) {
+                            name = name.substring(schemaResource.length() + 1);
+                            if (jEntry.isDirectory()) {
+                                new File(schemaDir, name).mkdirs();
+                            } else {
+                                UtilExt.writeFile(
+                                        new File(schemaDir, name),
+                                        EPUBFiles.class.getResourceAsStream(
+                                                "/" + schemaResource + "/" + name
+                                        )
+                                );
+                            }
+                        }
+                    }
+                    jar.close();
                 }
             }
         }

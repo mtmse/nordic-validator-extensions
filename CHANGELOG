@@ -1,3 +1,10 @@
+Version 1.0.7
+
+* Handle daisy formats with extra directories
+* Audio Check to verify that text length and voice length is similar.
+* Validate only the first dc:title against content documents title.
+* Fix endnotes conflicting issue between ace and nordic rules.
+
 Version 1.0.6
 
 * Replace all instances of obf with opf.

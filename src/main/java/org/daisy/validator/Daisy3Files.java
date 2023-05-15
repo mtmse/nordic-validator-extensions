@@ -1,5 +1,6 @@
 package org.daisy.validator;
 
+import org.daisy.validator.audiocheck.AudioClip;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.Guideline;
 import org.daisy.validator.schemas.GuidelineExt;
@@ -55,6 +56,7 @@ public class Daisy3Files {
     private final File daisyDir = UtilExt.createTempDirectory();
     private final File schemaDir = UtilExt.createTempDirectory();
     private final Guideline guideline;
+    private List<AudioClip> audioClips = new ArrayList();
 
     public Daisy3Files(String filename, String issue) throws Exception {
         this(filename, issue, null);
@@ -152,7 +154,7 @@ public class Daisy3Files {
         }
     }
 
-    public void validate() throws Exception {
+    public void validate(boolean validateAudioClipLength) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -217,7 +219,7 @@ public class Daisy3Files {
             errorList.add(uri);
         }
 
-        validateAudio();
+        validateAudio(validateAudioClipLength);
 
         int received = 0;
         boolean errors = false;
@@ -272,7 +274,7 @@ public class Daisy3Files {
         submittedWork++;
     }
 
-    private void validateAudio() throws Exception {
+    private void validateAudio(boolean validateAudioClipLength) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -339,6 +341,10 @@ public class Daisy3Files {
             );
         }
 
+        if (validateAudioClipLength) {
+            AudioClip.validateAudioClips(audioClips, daisyDir, errorList, GuidelineExt.NCX);
+        }
+
         if (Math.abs(elapsedTime - totalTime) > 500) {
             errorList.add(new Issue(
                 "",
@@ -397,6 +403,8 @@ public class Daisy3Files {
             if (ending > audioFiles.get(filename)) {
                 createSmilError(smilFile, "Ending of clip is not in audio " + el.getAttribute("src"));
             }
+
+            audioClips.add(new AudioClip(smilFile, el, beginning, ending));
             timeInThisSmilFile += ending - beginning;
         }
 
@@ -436,7 +444,7 @@ public class Daisy3Files {
         NodeList nodeList = (NodeList) xPathExpRel.evaluate(xmlDocument, XPathConstants.NODESET);
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n  = nodeList.item(i);
-            String filename = new File(new File(file).getParent(), n.getNodeValue()).getPath();
+            String filename = Util.getRelativeFilename(file, n.getNodeValue());
             uris[0].add(new Issue(
                 filename,
                 "[" +GuidelineExt.SMIL + "] The reference " + filename + " points to a id in the target resource that does not exist.",
