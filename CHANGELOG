@@ -4,6 +4,7 @@ Version 1.0.7
 * Audio Check to verify that text length and voice length is similar.
 * Validate only the first dc:title against content documents title.
 * Fix endnotes conflicting issue between ace and nordic rules.
+* Added validation of zipfiles containing pef files.
 
 Version 1.0.6
 
