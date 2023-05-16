@@ -1,6 +1,7 @@
 package org.daisy.validator;
 
 import org.daisy.validator.audiocheck.AudioClip;
+import org.daisy.validator.audiocheck.ReportConfiguration;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.Guideline;
 import org.daisy.validator.schemas.GuidelineExt;
@@ -51,7 +52,7 @@ public class EPUBFilesExt {
         return this.epubFiles;
     }
 
-    public void validateAudioClips() throws Exception {
+    public void validateAudioClips(ReportConfiguration reportConfiguration) throws Exception {
         List<AudioClip> audioClips = new ArrayList<>();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -94,7 +95,7 @@ public class EPUBFilesExt {
             }
         }
 
-        AudioClip.validateAudioClips(audioClips, epubFiles.getEpubDir(), epubFiles.getErrorList(), Guideline.OPF);
+        AudioClip.validateAudioClips(reportConfiguration, audioClips, epubFiles.getEpubDir(), epubFiles.getErrorList(), Guideline.OPF);
     }
 
     private void validateSmilFileExt(

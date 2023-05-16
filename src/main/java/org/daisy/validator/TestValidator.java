@@ -1,5 +1,6 @@
 package org.daisy.validator;
 
+import org.daisy.validator.audiocheck.ReportConfiguration;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.report.ReportGenerator;
 import org.daisy.validator.schemas.GuidelineDaisy202;
@@ -32,7 +33,7 @@ public class TestValidator {
                     new GuidelineDaisy202()
             );
             d3f.unpackSchemas();
-            d3f.validate(true);
+            d3f.validate(new ReportConfiguration());
             d3f.cleanUp();
 
             for (Issue i : d3f.getErrorList()) {

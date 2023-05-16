@@ -36,6 +36,8 @@ public class AudioClip {
     private String smilFile;
     private String contentFile;
     private String paragraphId;
+    private ReportConfiguration reportConfiguration;
+
 
     public AudioClip(String smilFile, Element el, long clipBegin, long clipEnd) {
 
@@ -173,6 +175,7 @@ public class AudioClip {
     }
 
     public static void validateAudioClips(
+        ReportConfiguration reportConfiguration,
         List<AudioClip> audioClips,
         File parentDir,
         Set<Issue> errorList,
@@ -222,11 +225,10 @@ public class AudioClip {
 
                 ac.setText(element.getTextContent().trim());
                 ac.initVowels();
-                ReportConfiguration rc = new ReportConfiguration();
-                if (!ac.check(rc)) {
+                if (!ac.check(reportConfiguration)) {
                     String line = "";
                     line += "Incorrect length of " + ac.getParagraphId() + " in " + ac.getContentFile();
-                    line += " - Expected length " + Util.formatTime((long)ac.getExpectedDuration(rc));
+                    line += " - Expected length " + Util.formatTime((long)ac.getExpectedDuration(reportConfiguration));
                     line += " actual length " + Util.formatTime(ac.getDuration());
                     errorList.add(
                         new Issue("", "[" + GuidelineExt.AUDIO_CHECK + "] " + line,
