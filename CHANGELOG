@@ -1,3 +1,9 @@
+Version 1.0.9
+
+* Fix https://trello.com/c/mp8R37c1/525-daisy202-files-that-are-valid-in-pipeline-only-get-a-crash-raport-in-the-textalk-validator
+* Fix https://trello.com/c/HfoCU1Qh/515-include-the-book-checker-as-one-more-option-to-the-epub-validation
+* Fix https://trello.com/c/dHUGDSMt/532-elapsed-time-does-not-match-metadata
+
 Version 1.0.8
 
 * Adding audio check options.

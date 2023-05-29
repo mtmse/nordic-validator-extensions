@@ -338,7 +338,7 @@ public class Daisy202Files {
         String totalTimeStr = (String) xPathExpTotalElapsedTime.evaluate(smilDocument, XPathConstants.STRING);
         long totalElapsedTime = UtilExt.parseMilliSeconds(totalTimeStr);
 
-        if (Math.abs(totalElapsedTime - elapsedTime) > 500) {
+        if (!totalTimeStr.isBlank() && Math.abs(totalElapsedTime - elapsedTime) > 500) {
             createSmilError(smilFile,
                 "Elapsed time before this smil time " + UtilExt.formatTime(elapsedTime) +
                 " does not match the time in metadata " + UtilExt.formatTime(totalElapsedTime)
@@ -383,7 +383,7 @@ public class Daisy202Files {
 
         String timeInThisSmilStr = (String) xPathExpTimeInThisSmil.evaluate(smilDocument, XPathConstants.STRING);
         long timeInThisSmil = UtilExt.parseMilliSeconds(timeInThisSmilStr);
-        if (Math.abs(timeInThisSmil - timeInThisSmilFile) > 500) {
+        if (!timeInThisSmilStr.isBlank() && Math.abs(timeInThisSmil - timeInThisSmilFile) > 500) {
             createSmilError(smilFile,
                 "Total time in this smil file " + UtilExt.formatTime(timeInThisSmilFile) +
                 " does not match the time in metadata " + UtilExt.formatTime(timeInThisSmil)
