@@ -194,6 +194,9 @@ public class AudioClip {
         XPath xPath = XPathFactory.newInstance().newXPath();
 
         for (Map.Entry<String, List<AudioClip>> entry : audioClipsByFile.entrySet()) {
+            if (!new File(parentDir, entry.getKey()).exists()) {
+                continue;
+            }
             Document xmlDocument = null;
             try {
                 xmlDocument = db.parse(new File(parentDir, entry.getKey()));
