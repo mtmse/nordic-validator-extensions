@@ -480,6 +480,9 @@ public class DTBookFiles {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n  = nodeList.item(i);
             String filename = Util.getRelativeFilename(file, n.getNodeValue());
+            if (!filename.contains(":") && !filename.contains("#") && !filename.contains(".")) {
+                filename = file + "#" + filename;
+            }
             uris[0].add(new Issue(
                 filename,
                 "[" +validationType + "] The reference " + filename + " points to a id in the target resource that does not exist.",

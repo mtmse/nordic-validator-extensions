@@ -1,3 +1,7 @@
+Version 1.0.10
+
+* Bugfix in finding links within the same file.
+
 Version 1.0.9
 
 * Fix https://trello.com/c/mp8R37c1/525-daisy202-files-that-are-valid-in-pipeline-only-get-a-crash-raport-in-the-textalk-validator
