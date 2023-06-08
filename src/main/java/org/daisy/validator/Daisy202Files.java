@@ -427,7 +427,10 @@ public class Daisy202Files {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n  = nodeList.item(i);
             String filename = Util.getRelativeFilename(file, n.getNodeValue());
-            if (!filename.contains(":") && !filename.contains("#") && !filename.contains(".")) {
+            if (filename.contains(":")) {
+                continue;
+            }
+            if (!filename.contains("#") && !filename.contains(".")) {
                 filename = file + "#" + filename;
             }
             uris[0].add(new Issue(

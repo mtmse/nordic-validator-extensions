@@ -1,3 +1,7 @@
+Version 1.0.11
+
+* Don't validate external links.
+
 Version 1.0.10
 
 * Bugfix in finding links within the same file.
