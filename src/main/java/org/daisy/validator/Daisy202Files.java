@@ -430,8 +430,8 @@ public class Daisy202Files {
             if (filename.contains(":")) {
                 continue;
             }
-            if (!filename.contains("#") && !filename.contains(".")) {
-                filename = file + "#" + filename;
+            if ((filename.startsWith("#") || !filename.contains("#")) && !filename.contains(".")) {
+                filename = file + (filename.startsWith("#") ? "" : "#") + filename;
             }
             uris[0].add(new Issue(
                 filename,

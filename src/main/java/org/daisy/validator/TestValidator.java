@@ -21,7 +21,7 @@ public class TestValidator {
             runFile(file);
         }
         */
-        runFile("/home/danielp/daisywork/daisy2/daisy2.zip");
+        runFile("/home/danielp/daisywork/daisy2/V002956.zip");
     }
 
     public static void runFile(String filename) {
