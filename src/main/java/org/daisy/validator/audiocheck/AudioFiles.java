@@ -66,7 +66,7 @@ public class AudioFiles {
                 addError(audioFile.name, "Bitrate is not valid (not 33/48/128 kbit/s) current " + audioFile.bitrate);
             }
 
-            if (audioFile.peakLevel > -3) {  // Assuming -3dBFS is the threshold
+            if (audioFile.peakLevel < -3) {  // Assuming -3dBFS is the threshold
                 addError(audioFile.name, "Audio file peek level exceeds -3 value is " + audioFile.peakLevel + " dBFS");
             }
 
@@ -86,6 +86,8 @@ public class AudioFiles {
             }
 
 /*
+            This test is currently not working.
+
             List<Double> abruptChanges = detectAbruptChanges(filePath, audioFile.duration);
             if (!abruptChanges.isEmpty()) {
                 addError(audioFile.name, "Abrupt changes detected at timestamps: " + abruptChanges);
