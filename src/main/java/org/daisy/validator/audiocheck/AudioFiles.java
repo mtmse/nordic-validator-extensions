@@ -3,12 +3,10 @@ package org.daisy.validator.audiocheck;
 import org.apache.log4j.Logger;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.GuidelineExt;
-import java.io.File;
+
+import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
 public class AudioFiles {
@@ -18,14 +16,15 @@ public class AudioFiles {
     private static final Pattern silencePatternStart = Pattern.compile("silencedetect.*silence_start: (-?[0-9.]+)");
     private static final Pattern silencePatternEnd = Pattern.compile("silencedetect.*silence_end: (-?[0-9.]+)");
     private static final Pattern segmentRMSPattern = Pattern.compile("RMS[ ]*amplitude:[ ]*(-?[0-9.]+)");
-
-
     private final List<AudioFile> audioFiles;
     private final Set<Issue> errorList;
+
+    private final File tmpDir;
 
     public AudioFiles(File tmpDir, List<File> list) {
         audioFiles = new ArrayList<>();
         errorList = new HashSet<>();
+        this.tmpDir = tmpDir;
         
         // Initialize the audio files
         for (File file : list) {
@@ -37,14 +36,18 @@ public class AudioFiles {
     }
 
     private void addError(String filename, String issue) {
-        errorList.add(new Issue("", "[audio-quality] " + issue, filename, GuidelineExt.AUDIO, Issue.ERROR_ERROR));
+        errorList.add(new Issue("", "[" + GuidelineExt.AUDIO_QUALITY + "] " + issue, filename, GuidelineExt.SMIL, Issue.ERROR_ERROR));
+    }
+
+    public List<AudioFile> getAudioFiles() {
+        return audioFiles;
     }
 
     public Set<Issue> getErrorList() {
         return errorList;
     }
 
-    public void validate() {
+    public void validate() throws Exception {
         for (AudioFile audioFile : audioFiles) {
             String filePath = audioFile.originalFile.getAbsolutePath();
             
@@ -63,23 +66,31 @@ public class AudioFiles {
                 addError(audioFile.name, "Bitrate is not valid (not 33/48/128 kbit/s) current " + audioFile.bitrate);
             }
 
+            if (audioFile.peakLevel > -3) {  // Assuming -3dBFS is the threshold
+                addError(audioFile.name, "Audio file peek level exceeds -3 value is " + audioFile.peakLevel + " dBFS");
+            }
 
             // Disable functions not yet tested and reviewed.
-/*
-
-            if (checkClipping(filePath)) {
+            if (checkClipping(filePath, "")) {
                 addError(audioFile.name, "Clipping detected in audio file");
+
+                List<Double> clippingTimestamps = getClippingTimestamps(filePath, audioFile.duration);
+                if (!clippingTimestamps.isEmpty()) {
+                    addError(audioFile.name, "Clipping detected at timestamps: " + clippingTimestamps);
+                }
             }
-            
+
             List<Double> unevenPeakTimestamps = getUnevenPeakTimestamps(filePath, audioFile.peakLevel, audioFile.duration);
             if (!unevenPeakTimestamps.isEmpty()) {
                 addError(audioFile.name, "Uneven peak levels detected at timestamps: " + unevenPeakTimestamps);
             }
 
-            List<Double> clippingTimestamps = getClippingTimestamps(filePath, audioFile.sampleRate);
-            if (!clippingTimestamps.isEmpty()) {
-                addError(audioFile.name, "Clipping detected at timestamps: " + clippingTimestamps);
+/*
+            List<Double> abruptChanges = detectAbruptChanges(filePath, audioFile.duration);
+            if (!abruptChanges.isEmpty()) {
+                addError(audioFile.name, "Abrupt changes detected at timestamps: " + abruptChanges);
             }
+ */
 
             Map<Double, Double> longSilences = getLongSilences(filePath);
             if (!longSilences.isEmpty()) {
@@ -90,20 +101,12 @@ public class AudioFiles {
             if (initialSilencePeak > -50) {  // Assuming -50dBFS is the threshold
                 addError(audioFile.name, "Background noise exceeds threshold at " + initialSilencePeak + " dBFS");
             }
-
-            List<Double> abruptChanges = detectAbruptChanges(filePath, audioFile.duration);
-            if (!abruptChanges.isEmpty()) {
-                addError(audioFile.name, "Abrupt changes detected at timestamps: " + abruptChanges);
-            }
- */
         }
 
-/*
         List<String> inconsistentPeakFiles = checkPeakLevelsConsistency();
         for (String filename : inconsistentPeakFiles) {
             addError(filename, "The peak level is inconsistent with other audio files");
         }
- */
     }
 
     private boolean isMPEGAudioLayer3(String filePath) {
@@ -111,87 +114,6 @@ public class AudioFiles {
         return format.contains("layer iii") || format.contains("layer 3");
     }
 
-    private boolean checkClipping(String filePath) {
-        String output = bashExecute("sox " + filePath + " -n stat -c");
-        
-        // Search for lines with [CLIPPING]
-        Matcher matcher = clippingPattern.matcher(output);
-        
-        if(matcher.find()) {
-            return true; // Clipping found
-        } else {
-            return false; // No clipping
-        }
-    }
-    
-    private List<Double> getUnevenPeakTimestamps(String filePath, double peakLevelInDbFs, double duration) {
-        List<Double> unevenTimestamps = new ArrayList<>();
-
-        logger.debug("Debugging getUnevenPeakTimestamps");
-        logger.debug("Total Audio Duration: " + duration + "s");
-        logger.debug("Peak Level of Entire File: " + peakLevelInDbFs + " dBFS");
-        
-        double overlap = 5.0; // overlap of 5 seconds, adjust as needed
-        
-        for (double start = 0; start < duration; start += (30 - overlap)) {
-                double end = Math.min(start + 30, duration);
-                double segmentDuration = end - start;
-                String output = bashExecute("sox " + filePath + " -n trim " + start + " " + segmentDuration + " stat");
-
-                Matcher matcher = maxAmpPattern.matcher(output);
-            
-                if(matcher.find()) {
-                        double segmentAmplitude = Double.parseDouble(matcher.group(1));
-                    
-                        // Convert amplitude to dBFS
-                        double segmentPeakInDbFs = (segmentAmplitude == 0) 
-                            ? Double.NEGATIVE_INFINITY
-                            : 20 * Math.log10(segmentAmplitude);
-
-                        logger.debug("Segment Peak from " + start + "s to " + end + "s: " + segmentPeakInDbFs + " dBFS");
-                    
-                        double difference = Math.abs(segmentPeakInDbFs - peakLevelInDbFs);
-                        logger.debug("Difference between segment peak and file peak: " + difference);
-                    
-                        if (difference > 0.05) {
-                            logger.debug("Uneven peak detected at timestamp: " + start + "s");
-                            unevenTimestamps.add(start);
-                        }
-                } else {
-                    logger.debug("No peak value found for segment from " + start + "s to " + end + "s");
-                }
-        }
-        
-        return unevenTimestamps;
-    }
-    
-    private List<Double> getClippingTimestamps(String filePath, int sampleRate) {
-        if (sampleRate != -1) {
-            return new ArrayList<>();
-        }
-
-        String command = "sox " + filePath + " -c 1 -t txt -";
-        String output = bashExecute(command + " | grep -n ' 1$'");
-        
-        // Split the output by line
-        String[] lines = output.split("\n");
-        List<Double> timestamps = new ArrayList<>();
-
-        for(String line : lines) {
-            // Split by ':' to get the line number (which corresponds to the sample number)
-            String[] parts = line.split(":");
-            if(parts.length > 1) {
-                int sampleNumber = Integer.parseInt(parts[0].trim());
-                
-                // Calculate timestamp using the dynamic sample rate
-                double timestamp = (double)sampleNumber / sampleRate;
-                timestamps.add(timestamp);
-            }
-        }
-        
-        return timestamps;
-    }
-    
     private Map<Double, Double> getLongSilences(String filePath) {
         String command = "ffmpeg -i " + filePath + " -af silencedetect=noise=-50dB:d=8 -f null -";
         String output = bashExecute(command);
@@ -215,19 +137,7 @@ public class AudioFiles {
         
         return silences;
     }
-    
-    private double getSegmentRMS(String filePath, double start, double duration) {
-        String output = bashExecute("sox " + filePath + " -n trim " + start + " " + duration + " stat -rms");
 
-        Matcher matcher = segmentRMSPattern.matcher(output);
-        
-        if(matcher.find()) {
-            return Double.parseDouble(matcher.group(1));
-        } else {
-            return 0; 
-        }
-    }
-    
     private double getInitialSilencePeak(String filePath) {
         String output = bashExecute("sox " + filePath + " -n trim 0 0.2 stat");
         
@@ -310,13 +220,14 @@ public class AudioFiles {
         return inconsistentFiles;
     }
     
-    private List<Double> detectAbruptChanges(String filePath, double duration) {
+/*
+    public List<Double> detectAbruptChanges(String filePath, double duration) {
         List<Double> abruptChangeTimestamps = new ArrayList<>();
         double previousRMS = 0;
-        
+
         final double SEGMENT_DURATION = 0.05; // 50ms
         final double RMS_THRESHOLD = 0.1; // Define a suitable threshold
-        
+
         for (double start = 0; start < duration; start += SEGMENT_DURATION) {
             double segmentRMS = getSegmentRMS(filePath, start, SEGMENT_DURATION);
             if (Math.abs(segmentRMS - previousRMS) > RMS_THRESHOLD) {
@@ -324,7 +235,86 @@ public class AudioFiles {
             }
             previousRMS = segmentRMS;
         }
-        
+
         return abruptChangeTimestamps;
+    }
+
+    private double getSegmentRMS(String filePath, double start, double duration) {
+        String output = bashExecute("sox " + filePath + " -n trim " + start + " " + duration + " stat -rms");
+
+        Matcher matcher = segmentRMSPattern.matcher(output);
+
+        if(matcher.find()) {
+            return Double.parseDouble(matcher.group(1));
+        } else {
+            return 0;
+        }
+    }
+ */
+
+    private boolean checkClipping(String filePath, String trimStatement) {
+        String output = bashExecute("sox " + filePath + " -n --norm -R gain 0.1 " + trimStatement);
+
+        if(output.contains("clipped")) {
+            return true; // Clipping found
+        } else {
+            return false; // No clipping
+        }
+    }
+
+    private List<Double> getUnevenPeakTimestamps(String filePath, double peakLevelInDbFs, double duration) {
+        List<Double> unevenTimestamps = new ArrayList<>();
+
+        logger.debug("Debugging getUnevenPeakTimestamps");
+        logger.debug("Total Audio Duration: " + duration + "s");
+        logger.debug("Peak Level of Entire File: " + peakLevelInDbFs + " dBFS");
+
+        double overlap = 5.0; // overlap of 5 seconds, adjust as needed
+
+        for (double start = 0; start < duration; start += (30 - overlap)) {
+            double end = Math.min(start + 30, duration);
+            double segmentDuration = end - start;
+            String output = bashExecute("sox " + filePath + " -n trim " + start + " " + segmentDuration + " stat");
+
+            Matcher matcher = maxAmpPattern.matcher(output);
+
+            if(matcher.find()) {
+                double segmentAmplitude = Double.parseDouble(matcher.group(1));
+
+                // Convert amplitude to dBFS
+                double segmentPeakInDbFs = (segmentAmplitude == 0)
+                        ? Double.NEGATIVE_INFINITY
+                        : 20 * Math.log10(segmentAmplitude);
+
+                logger.debug("Segment Peak from " + start + "s to " + end + "s: " + segmentPeakInDbFs + " dBFS");
+
+                double difference = Math.abs(segmentPeakInDbFs - peakLevelInDbFs);
+                logger.debug("Difference between segment peak and file peak: " + difference);
+
+                if (difference > 0.05) {
+                    logger.debug("Uneven peak detected at timestamp: " + start + "s");
+                    unevenTimestamps.add(start);
+                }
+            } else {
+                logger.debug("No peak value found for segment from " + start + "s to " + end + "s");
+            }
+        }
+
+        return unevenTimestamps;
+    }
+
+    private List<Double> getClippingTimestamps(String filePath, double duration) {
+        List<Double> unevenTimestamps = new ArrayList<>();
+
+        double step = 5.0; // overlap of 5 seconds, adjust as needed
+
+        for (double start = 0; start < duration; start += step) {
+            double end = Math.min(start, duration);
+            double segmentDuration = end - start;
+            if (checkClipping(filePath, "trim " + start + " " + segmentDuration)) {
+                unevenTimestamps.add(start);
+            }
+        }
+        return unevenTimestamps;
     }
 }
