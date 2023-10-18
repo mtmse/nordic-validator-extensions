@@ -5,27 +5,29 @@ import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.GuidelineExt;
 
 import java.io.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AudioFiles {
     private static final Logger logger = Logger.getLogger(AudioFiles.class.getName());
-    private static final Pattern clippingPattern = Pattern.compile("\\d+\\s+\\[CLIPPING\\]");
     private static final Pattern maxAmpPattern = Pattern.compile("Maximum amplitude[ ]*:[ ]*(-?[0-9.]+)");
     private static final Pattern silencePatternStart = Pattern.compile("silencedetect.*silence_start: (-?[0-9.]+)");
     private static final Pattern silencePatternEnd = Pattern.compile("silencedetect.*silence_end: (-?[0-9.]+)");
-    private static final Pattern segmentRMSPattern = Pattern.compile("RMS[ ]*amplitude:[ ]*(-?[0-9.]+)");
     private final List<AudioFile> audioFiles;
     private final Set<Issue> errorList;
-
-    private final File tmpDir;
 
     public AudioFiles(File tmpDir, List<File> list) {
         audioFiles = new ArrayList<>();
         errorList = new HashSet<>();
-        this.tmpDir = tmpDir;
-        
+
+        Instant workStart = Instant.now();
+
         // Initialize the audio files
         for (File file : list) {
             AudioFile audioFile = new AudioFile(tmpDir, file);
@@ -33,6 +35,8 @@ public class AudioFiles {
             audioFile.initWithInfo(bashExecute("soxi " + audioFile.path));
             audioFiles.add(audioFile);
         }
+
+        System.out.println("Init done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     private void addError(String filename, String issue) {
@@ -48,42 +52,63 @@ public class AudioFiles {
     }
 
     public void validate() throws Exception {
+
         for (AudioFile audioFile : audioFiles) {
             String filePath = audioFile.originalFile.getAbsolutePath();
-            
+
             if (!isMPEGAudioLayer3(filePath)) {
                 addError(audioFile.name, "File is not MPEG Audio Layer 3 format");
             }
-            
-            if (audioFile.sampleRate != 22050 || audioFile.channels != 1) {
-                addError(audioFile.name,
-                "Sample rate is not 22050 Hz or it's not mono (SampleRate " + audioFile.sampleRate +
-                    " Channels " + audioFile.channels + ")"
-                );
+
+            if (audioFile.sampleRate != 22050) {
+                addError(audioFile.name, "Sample rate is not 22050 Hz (" + audioFile.sampleRate + ")");
             }
+
+            if (audioFile.channels != 1) {
+                addError(audioFile.name, "Audio is not mono");
+            }
+
 
             if (audioFile.bitrate != 33 && audioFile.bitrate != 48 && audioFile.bitrate != 128) {
-                addError(audioFile.name, "Bitrate is not valid (not 33/48/128 kbit/s) current " + audioFile.bitrate);
+                addError(audioFile.name, "Bitrate is not 33 kbit/s, 48 kbit/s or 128 kbit/s (" + audioFile.bitrate + " kbit/s)");
             }
 
+
             if (audioFile.peakLevel < -3) {  // Assuming -3dBFS is the threshold
-                addError(audioFile.name, "Audio file peek level exceeds -3 value is " + audioFile.peakLevel + " dBFS");
+                addError(audioFile.name, "Audio file peek level does not exceed -3 dBFS (" + audioFile.peakLevel + " dBFS)");
             }
+        }
+
+        Instant workStart = Instant.now();
+        for (AudioFile audioFile : audioFiles) {
+            String filePath = audioFile.originalFile.getAbsolutePath();
 
             // Disable functions not yet tested and reviewed.
             if (checkClipping(filePath, "")) {
                 addError(audioFile.name, "Clipping detected in audio file");
+                /*
+                This takes too long time to run in production.
 
                 List<Double> clippingTimestamps = getClippingTimestamps(filePath, audioFile.duration);
                 if (!clippingTimestamps.isEmpty()) {
                     addError(audioFile.name, "Clipping detected at timestamps: " + clippingTimestamps);
                 }
+                */
             }
+        }
+        System.out.println("Clipping done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+        workStart = Instant.now();
+        for (AudioFile audioFile : audioFiles) {
+            String filePath = audioFile.originalFile.getAbsolutePath();
 
             List<Double> unevenPeakTimestamps = getUnevenPeakTimestamps(filePath, audioFile.peakLevel, audioFile.duration);
             if (!unevenPeakTimestamps.isEmpty()) {
                 addError(audioFile.name, "Uneven peak levels detected at timestamps: " + unevenPeakTimestamps);
             }
+        }
+        System.out.println("UnevenPeaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
 
 /*
             This test is currently not working.
@@ -94,21 +119,32 @@ public class AudioFiles {
             }
  */
 
+        workStart = Instant.now();
+        for (AudioFile audioFile : audioFiles) {
+            String filePath = audioFile.originalFile.getAbsolutePath();
             Map<Double, Double> longSilences = getLongSilences(filePath);
             if (!longSilences.isEmpty()) {
                 addError(audioFile.name, "Long silences detected at intervals: " + longSilences);
             }
-            
+        }
+        System.out.println("Long silences done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+        workStart = Instant.now();
+        for (AudioFile audioFile : audioFiles) {
+            String filePath = audioFile.originalFile.getAbsolutePath();
             double initialSilencePeak = getInitialSilencePeak(filePath);
             if (initialSilencePeak > -50) {  // Assuming -50dBFS is the threshold
-                addError(audioFile.name, "Background noise exceeds threshold at " + initialSilencePeak + " dBFS");
+                addError(audioFile.name, "Background noise exceeds threshold -50 dBFS (" + initialSilencePeak + " dBFS)");
             }
         }
+        System.out.println("Background noise done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
+        workStart = Instant.now();
         List<String> inconsistentPeakFiles = checkPeakLevelsConsistency();
         for (String filename : inconsistentPeakFiles) {
-            addError(filename, "The peak level is inconsistent with other audio files");
+            addError(filename, "Peak level is inconsistent with other audio files");
         }
+        System.out.println("Inconsistent peaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     private boolean isMPEGAudioLayer3(String filePath) {
@@ -254,16 +290,6 @@ public class AudioFiles {
     }
  */
 
-    private boolean checkClipping(String filePath, String trimStatement) {
-        String output = bashExecute("sox " + filePath + " -n --norm -R gain 0.1 " + trimStatement);
-
-        if(output.contains("clipped")) {
-            return true; // Clipping found
-        } else {
-            return false; // No clipping
-        }
-    }
-
     private List<Double> getUnevenPeakTimestamps(String filePath, double peakLevelInDbFs, double duration) {
         List<Double> unevenTimestamps = new ArrayList<>();
 
@@ -305,10 +331,18 @@ public class AudioFiles {
         return unevenTimestamps;
     }
 
-    private List<Double> getClippingTimestamps(String filePath, double duration) {
-        List<Double> unevenTimestamps = new ArrayList<>();
+    public boolean checkClipping(String filePath, String trimStatement) {
+        String output = bashExecute("sox " + filePath + " -n --norm -R gain 0.1 " + trimStatement);
 
-        double step = 5.0; // overlap of 5 seconds, adjust as needed
+        if(output.contains("clipped")) {
+            return true; // Clipping found
+        }
+        return false; // No clipping
+    }
+
+    private List<Double> getClippingTimestamps(String filePath, double duration) throws Exception {
+        List<Double> unevenTimestamps = new ArrayList<>();
+        double step = 60.0; // overlap of 60 seconds, adjust as needed
 
         for (double start = 0; start < duration; start += step) {
             double end = Math.min(start, duration);

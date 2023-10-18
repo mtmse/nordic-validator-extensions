@@ -1,17 +1,23 @@
 package org.daisy.validator;
 
+import org.checkerframework.checker.units.qual.A;
+import org.daisy.validator.audiocheck.AudioFiles;
 import org.daisy.validator.audiocheck.ReportConfiguration;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.report.ReportGenerator;
 import org.daisy.validator.schemas.*;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipFile;
 
 public class TestValidator {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         //runDaisy202File("/home/danielp/daisywork/daisy2/CA64157_fixed.zip");
         runEPUBFile("/home/danielp/epub/22453_371_1_25055.epub");
     }
@@ -36,7 +42,7 @@ public class TestValidator {
 
             ReportGenerator rg = new ReportGenerator();
             rg.generateHTMLReport(
-                    new GuidelineDaisy202(),
+                    guideline,
                     filename,
                     "test.html",
                     issueList
