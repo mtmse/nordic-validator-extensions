@@ -9,6 +9,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
@@ -61,7 +63,7 @@ public class AudioFiles {
             }
 
             if (audioFile.sampleRate != 22050) {
-                addError(audioFile.name, "Sample rate is not 22050 Hz (" + audioFile.sampleRate + ")");
+                addError(audioFile.name, "Sample rate is not 22050 Hz (" + audioFile.sampleRate + " Hz)");
             }
 
             if (audioFile.channels != 1) {
@@ -73,9 +75,8 @@ public class AudioFiles {
                 addError(audioFile.name, "Bitrate is not 33 kbit/s, 48 kbit/s or 128 kbit/s (" + audioFile.bitrate + " kbit/s)");
             }
 
-
             if (audioFile.peakLevel < -3) {  // Assuming -3dBFS is the threshold
-                addError(audioFile.name, "Audio file peek level does not exceed -3 dBFS (" + audioFile.peakLevel + " dBFS)");
+                addError(audioFile.name, "Audio file peek level does not exceed -3 dBFS (" + String.format("%.2f", audioFile.peakLevel) + " dBFS)");
             }
         }
 
@@ -104,7 +105,14 @@ public class AudioFiles {
 
             List<Double> unevenPeakTimestamps = getUnevenPeakTimestamps(filePath, audioFile.peakLevel, audioFile.duration);
             if (!unevenPeakTimestamps.isEmpty()) {
-                addError(audioFile.name, "Uneven peak levels detected at timestamps: " + unevenPeakTimestamps);
+                List<String> peakList = new ArrayList<>();
+                for (Double peak : unevenPeakTimestamps) {
+                    String start = LocalTime.MIDNIGHT.plus(Duration.of(peak.intValue(), ChronoUnit.SECONDS)).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    String end = LocalTime.MIDNIGHT.plus(Duration.of(peak.intValue() + 5, ChronoUnit.SECONDS)).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+                    peakList.add(start + "-" + end);
+                }
+                addError(audioFile.name,  "Uneven peak levels detected at timestamps: " + peakList);
             }
         }
         System.out.println("UnevenPeaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
@@ -124,7 +132,15 @@ public class AudioFiles {
             String filePath = audioFile.originalFile.getAbsolutePath();
             Map<Double, Double> longSilences = getLongSilences(filePath);
             if (!longSilences.isEmpty()) {
-                addError(audioFile.name, "Long silences detected at intervals: " + longSilences);
+                List<String> peakList = new ArrayList<>();
+                for (Map.Entry<Double, Double> peak : longSilences.entrySet()) {
+
+                    String start = LocalTime.MIDNIGHT.plus(Duration.of(peak.getKey().intValue(), ChronoUnit.SECONDS)).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    String end = LocalTime.MIDNIGHT.plus(Duration.of(peak.getValue().intValue() + 5, ChronoUnit.SECONDS)).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+                    peakList.add(start + "-" + end);
+                }
+                addError(audioFile.name, "Long silences detected at intervals: " + peakList);
             }
         }
         System.out.println("Long silences done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
@@ -134,7 +150,7 @@ public class AudioFiles {
             String filePath = audioFile.originalFile.getAbsolutePath();
             double initialSilencePeak = getInitialSilencePeak(filePath);
             if (initialSilencePeak > -50) {  // Assuming -50dBFS is the threshold
-                addError(audioFile.name, "Background noise exceeds threshold -50 dBFS (" + initialSilencePeak + " dBFS)");
+                addError(audioFile.name, "Background noise exceeds threshold -50 dBFS (" + String.format("%.2f", initialSilencePeak) + " dBFS)");
             }
         }
         System.out.println("Background noise done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
