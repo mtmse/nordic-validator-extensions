@@ -84,41 +84,34 @@ public class AudioFiles {
         for (AudioFile audioFile : audioFiles) {
             String filePath = audioFile.originalFile.getAbsolutePath();
 
-            // Disable functions not yet tested and reviewed.
+            Map<Double, Double> peakOverTime = getPeakLevelsOverTime(filePath);
+            boolean clipping = false;
+            double startTime = 0;
+            List<String> clippingList = new ArrayList<>();
+
+            for (Map.Entry<Double, Double> peak : peakOverTime.entrySet()) {
+                if (!clipping && peak.getValue() >= -0.1) {
+                    clipping = true;
+                    startTime = peak.getKey();
+                }
+                if (clipping && peak.getValue() < -0.1) {
+                    String start = LocalTime.MIDNIGHT.plus(Duration.of((long)(startTime * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                    String end = LocalTime.MIDNIGHT.plus(Duration.of((long)(peak.getKey() * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
+                    clippingList.add(start + "-" + end);
+                    clipping = false;
+                }
+            }
+
+            if (!clippingList.isEmpty()) {
+                addError(audioFile.name, "Clipping detected at timestamps: " + clippingList);
+            }
+
+            /*
             if (checkClipping(filePath, "")) {
                 addError(audioFile.name, "Clipping detected in audio file");
-
-                Map<Double, Double> peakOverTime = getPeakLevelsOverTime(filePath);
-                boolean clipping = false;
-                double startTime = 0;
-                List<String> clippingList = new ArrayList<>();
-
-                for (Map.Entry<Double, Double> peak : peakOverTime.entrySet()) {
-                    if (!clipping && peak.getValue() >= -0.1) {
-                        clipping = true;
-                        startTime = peak.getKey();
-                    }
-                    if (clipping && peak.getValue() < -0.1) {
-                        String start = LocalTime.MIDNIGHT.plus(Duration.of((long)(startTime * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
-                        String end = LocalTime.MIDNIGHT.plus(Duration.of((long)(peak.getKey() * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
-
-                        clippingList.add(start + "-" + end);
-                        clipping = false;
-                    }
-                }
-
-                addError(audioFile.name, "Clipping detected at timestamps: " + clippingList);
-
-
-                /*
-                This takes too long time to run in production.
-
-                List<Double> clippingTimestamps = getClippingTimestamps(filePath, audioFile.duration);
-                if (!clippingTimestamps.isEmpty()) {
-                    addError(audioFile.name, "Clipping detected at timestamps: " + clippingTimestamps);
-                }
-                */
             }
+            */
         }
         System.out.println("Clipping done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
@@ -146,7 +139,6 @@ public class AudioFiles {
             addError(filename, "Peak level is inconsistent with other audio files");
         }
         System.out.println("Inconsistent peaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-
 
 
 /*
