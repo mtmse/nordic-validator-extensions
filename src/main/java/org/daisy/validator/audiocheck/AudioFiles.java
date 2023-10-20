@@ -117,6 +117,14 @@ public class AudioFiles {
         }
         System.out.println("UnevenPeaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
+        workStart = Instant.now();
+        List<String> inconsistentPeakFiles = checkPeakLevelsConsistency();
+        for (String filename : inconsistentPeakFiles) {
+            addError(filename, "Peak level is inconsistent with other audio files");
+        }
+        System.out.println("Inconsistent peaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+
 
 /*
             This test is currently not working.
@@ -126,6 +134,16 @@ public class AudioFiles {
                 addError(audioFile.name, "Abrupt changes detected at timestamps: " + abruptChanges);
             }
  */
+
+        workStart = Instant.now();
+        for (AudioFile audioFile : audioFiles) {
+            String filePath = audioFile.originalFile.getAbsolutePath();
+            double initialSilencePeak = getInitialSilencePeak(filePath);
+            if (initialSilencePeak > -50) {  // Assuming -50dBFS is the threshold
+                addError(audioFile.name, "Background noise exceeds threshold -50 dBFS (" + String.format("%.2f", initialSilencePeak) + " dBFS)");
+            }
+        }
+        System.out.println("Background noise done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
         workStart = Instant.now();
         for (AudioFile audioFile : audioFiles) {
@@ -144,23 +162,6 @@ public class AudioFiles {
             }
         }
         System.out.println("Long silences done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-
-        workStart = Instant.now();
-        for (AudioFile audioFile : audioFiles) {
-            String filePath = audioFile.originalFile.getAbsolutePath();
-            double initialSilencePeak = getInitialSilencePeak(filePath);
-            if (initialSilencePeak > -50) {  // Assuming -50dBFS is the threshold
-                addError(audioFile.name, "Background noise exceeds threshold -50 dBFS (" + String.format("%.2f", initialSilencePeak) + " dBFS)");
-            }
-        }
-        System.out.println("Background noise done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-
-        workStart = Instant.now();
-        List<String> inconsistentPeakFiles = checkPeakLevelsConsistency();
-        for (String filename : inconsistentPeakFiles) {
-            addError(filename, "Peak level is inconsistent with other audio files");
-        }
-        System.out.println("Inconsistent peaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     private boolean isMPEGAudioLayer3(String filePath) {
