@@ -87,6 +87,29 @@ public class AudioFiles {
             // Disable functions not yet tested and reviewed.
             if (checkClipping(filePath, "")) {
                 addError(audioFile.name, "Clipping detected in audio file");
+
+                Map<Double, Double> peakOverTime = getPeakLevelsOverTime(filePath);
+                boolean clipping = false;
+                double startTime = 0;
+                List<String> clippingList = new ArrayList<>();
+
+                for (Map.Entry<Double, Double> peak : peakOverTime.entrySet()) {
+                    if (!clipping && peak.getValue() >= -0.1) {
+                        clipping = true;
+                        startTime = peak.getKey();
+                    }
+                    if (clipping && peak.getValue() < -0.1) {
+                        String start = LocalTime.MIDNIGHT.plus(Duration.of((long)(startTime * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        String end = LocalTime.MIDNIGHT.plus(Duration.of((long)(peak.getKey() * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
+                        clippingList.add(start + "-" + end);
+                        clipping = false;
+                    }
+                }
+
+                addError(audioFile.name, "Clipping detected at timestamps: " + clippingList);
+
+
                 /*
                 This takes too long time to run in production.
 
@@ -357,6 +380,39 @@ public class AudioFiles {
         return false; // No clipping
     }
 
+    private Map<Double, Double> getPeakLevelsOverTime(String filePath) throws Exception {
+        String logFile =  filePath + ".log";
+        bashExecute(
+            "ffmpeg -i " + filePath + " -af astats=metadata=1:reset=1:length=0.1," +
+            "ametadata=print:key=lavfi.astats.Overall.Peak_level:file=" + logFile + " -f null -"
+        );
+        BufferedReader br = new BufferedReader(new FileReader(logFile));
+        String line;
+        Double time = Double.MIN_VALUE;
+
+        Map<Double, Double> peakOverTime = new LinkedHashMap<>();
+
+        while ((line = br.readLine()) != null) {
+            if (line.startsWith("frame")) {
+                int val = line.lastIndexOf(":");
+                time = Double.parseDouble(line.substring(val + 1));
+            }
+            if (line.startsWith("lavfi")) {
+                int val = line.lastIndexOf("=");
+                try {
+                    double peak = Double.parseDouble(line.substring(val + 1));
+                    peakOverTime.put(time, peak);
+                } catch (NumberFormatException nfe) {}
+            }
+        }
+        br.close();
+
+        new File(logFile).delete();
+
+        return peakOverTime;
+    }
+
+    /*
     private List<Double> getClippingTimestamps(String filePath, double duration) throws Exception {
         List<Double> unevenTimestamps = new ArrayList<>();
         double step = 60.0; // overlap of 60 seconds, adjust as needed
@@ -370,4 +426,5 @@ public class AudioFiles {
         }
         return unevenTimestamps;
     }
+    */
 }
