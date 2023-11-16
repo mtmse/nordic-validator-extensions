@@ -20,6 +20,7 @@ public abstract class GuidelineExt extends Guideline {
 
     public static final String MATHML = "mathml";
     public static final String AUDIO_CHECK = "audio-check";
+    public static final String AUDIO_QUALITY = "audio-quality";
 
     public JSONObject getSchemaInformationJSON() {
         JSONObject allSchemas = new JSONObject();

@@ -1,19 +1,22 @@
 package org.daisy.validator;
 
 import org.daisy.validator.audiocheck.AudioClip;
+import org.daisy.validator.audiocheck.AudioFiles;
 import org.daisy.validator.audiocheck.ReportConfiguration;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.Guideline;
-import org.daisy.validator.schemas.GuidelineExt;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -72,14 +75,25 @@ public class EPUBFilesExt {
         }
 
         XPathExpression xPathExpAudio = xPath.compile("//audio[@clip-begin] | //audio[@clip-end] | //audio[@clipBegin] | //audio[@clipEnd]");
-        XPathExpression xPathExpSmilFiles = xPath.compile("//item[@media-type='application/smil+xml']");
+        XPathExpression xPathExpSmilFiles = xPath.compile("//item");
         NodeList nodeList = (NodeList)xPathExpSmilFiles.evaluate(xmlDocument, XPathConstants.NODESET);
+
+        List<File> audioFiles = new ArrayList();
 
         for(int i = 0; i < nodeList.getLength(); ++i) {
             Element el = (Element)nodeList.item(i);
             String filename = Util.getRelativeFilename(packageOBF, el.getAttribute("href"));
-            Document smilDocument = null;
 
+            if (filename.endsWith(".mp3") || filename.endsWith(".mp2") || filename.endsWith(".wav")) {
+                audioFiles.add(new File(epubFiles.getEpubDir(), filename));
+                continue;
+            }
+
+            if (!el.getAttribute("media-type").equalsIgnoreCase("application/smil+xml")) {
+                continue;
+            }
+
+            Document smilDocument = null;
             try {
                 smilDocument = db.parse(new File(epubFiles.getEpubDir(), filename));
                 validateSmilFileExt(smilDocument, filename, xPathExpAudio, audioClips);
@@ -95,7 +109,14 @@ public class EPUBFilesExt {
             }
         }
 
+        Instant workStart = Instant.now();
+
         AudioClip.validateAudioClips(reportConfiguration, audioClips, epubFiles.getEpubDir(), epubFiles.getErrorList(), Guideline.OPF);
+        AudioFiles af = new AudioFiles(epubFiles.getEpubDir(), audioFiles);
+        af.validate();
+        epubFiles.getErrorList().addAll(af.getErrorList());
+        Duration fileDuration = Duration.between(workStart, Instant.now());
+        System.out.println("Done in " + LocalTime.MIDNIGHT.plus(fileDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     private void validateSmilFileExt(
