@@ -1,3 +1,7 @@
+Version 1.0.18
+
+* Bug fix to handle titles with multiple spans.
+
 Version 1.0.16
 
 * Allow id, lang a.s.o in poems.
