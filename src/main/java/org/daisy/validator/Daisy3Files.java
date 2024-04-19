@@ -115,7 +115,7 @@ public class Daisy3Files {
 
                     if (ze.getName().endsWith(".mp3") || ze.getName().endsWith(".mp2") || ze.getName().endsWith(".wav")) {
                         AudioFileFormat audioFormat = AudioSystem.getAudioFileFormat(new File(daisyDir, ze.getName()));
-                        long frames = audioFormat.getFrameLength();
+                        long frames = audioFormat.getFrameLength() + 1;
                         long durationInMilliSeconds = Math.round((frames * 1000) / audioFormat.getFormat().getFrameRate());
                         audioFiles.put(ze.getName(), durationInMilliSeconds);
                     }
