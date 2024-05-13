@@ -18,8 +18,8 @@ import java.util.zip.ZipFile;
 
 public class TestValidator {
     public static void main(String[] args) throws Exception {
-        //runDaisy202File("/home/danielp/daisywork/daisy2/CA64157_fixed.zip");
-        runEPUBFile("/home/danielp/epub/22453_371_1_25055.epub");
+        runDaisy202File("/home/danielp/daisywork/daisy2/V013144_010273_140_V013144.zip");
+        //runEPUBFile("/home/danielp/epub/22453_371_1_25055.epub");
     }
 
     public static void runEPUBFile(String filename) {

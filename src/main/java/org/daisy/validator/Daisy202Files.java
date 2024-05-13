@@ -427,6 +427,9 @@ public class Daisy202Files {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n  = nodeList.item(i);
             String filename = Util.getRelativeFilename(file, n.getNodeValue());
+            if (n.getNodeValue().startsWith("#")) {
+                filename = n.getNodeValue();
+            }
             if (filename.contains(":")) {
                 continue;
             }
