@@ -190,7 +190,7 @@ public class AudioFiles {
         
         // Debug: print the ffmpeg output for clarity
         logger.debug(output);
-        
+
         // Detecting the start and end timestamps of the silence segments
         Matcher matcherStart = silencePatternStart.matcher(output);
         Matcher matcherEnd = silencePatternEnd.matcher(output);
@@ -234,11 +234,11 @@ public class AudioFiles {
                     new InputStreamReader(process.getInputStream()));
             
             String line;
-            
+
             while ((line = reader.readLine()) != null) {
                 output.append(line + "\n");
             }
-            
+
             int exitCode = process.waitFor();
             
             if (exitCode != 0) {
@@ -378,11 +378,13 @@ public class AudioFiles {
             "ffmpeg -i " + filePath + " -af astats=metadata=1:reset=1:length=0.1," +
             "ametadata=print:key=lavfi.astats.Overall.Peak_level:file=" + logFile + " -f null -"
         );
-        BufferedReader br = new BufferedReader(new FileReader(logFile));
+        File resultFile = new File(logFile);
+        Map<Double, Double> peakOverTime = new LinkedHashMap<>();
+        if (!resultFile.exists()) return peakOverTime;
+
+        BufferedReader br = new BufferedReader(new FileReader(resultFile));
         String line;
         Double time = Double.MIN_VALUE;
-
-        Map<Double, Double> peakOverTime = new LinkedHashMap<>();
 
         while ((line = br.readLine()) != null) {
             if (line.startsWith("frame")) {
