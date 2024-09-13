@@ -423,10 +423,11 @@ public class DTBookFiles {
                 beginning = UtilExt.parseMilliSeconds(el.getAttribute("clip-begin"));
                 ending = UtilExt.parseMilliSeconds(el.getAttribute("clip-end"));
             }
-            if (beginning > audioFiles.get(el.getAttribute("src"))) {
+            String filename = new File(new File(smilFile).getParentFile(), el.getAttribute("src")).getPath();
+            if (!audioFiles.containsKey(filename) || beginning > audioFiles.get(filename)) {
                 createSmilError(smilFile, "Beginning of clip is not in audio " + el.getAttribute("src"));
             }
-            if (ending > audioFiles.get(el.getAttribute("src"))) {
+            if (!audioFiles.containsKey(filename) || ending > audioFiles.get(filename)) {
                 createSmilError(smilFile, "Ending of clip is not in audio " + el.getAttribute("src"));
             }
 

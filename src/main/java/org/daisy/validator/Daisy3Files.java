@@ -398,10 +398,10 @@ public class Daisy3Files {
                 ending = UtilExt.parseMilliSeconds(el.getAttribute("clip-end"));
             }
             String filename = new File(new File(smilFile).getParentFile(), el.getAttribute("src")).getPath();
-            if (beginning > audioFiles.get(filename)) {
+            if (!audioFiles.containsKey(filename) || beginning > audioFiles.get(filename)) {
                 createSmilError(smilFile, "Beginning of clip is not in audio " + el.getAttribute("src"));
             }
-            if (ending > audioFiles.get(filename)) {
+            if (!audioFiles.containsKey(filename) || ending > audioFiles.get(filename)) {
                 createSmilError(smilFile, "Ending of clip is not in audio " + el.getAttribute("src"));
             }
 
