@@ -2,7 +2,8 @@ package org.daisy.validator;
 
 import org.daisy.validator.audiocheck.AudioClip;
 import org.daisy.validator.audiocheck.AudioFiles;
-import org.daisy.validator.audiocheck.ReportConfiguration;
+import org.daisy.validator.audiocheck.SentenceCheckConfiguration;
+import org.daisy.validator.audiocheck.SoundQualityCheckConfiguration;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.Guideline;
 import org.w3c.dom.Document;
@@ -55,7 +56,7 @@ public class EPUBFilesExt {
         return this.epubFiles;
     }
 
-    public void validateAudioClips(ReportConfiguration reportConfiguration) throws Exception {
+    public void validateAudioClips(SentenceCheckConfiguration sentenceCheckConfiguration, SoundQualityCheckConfiguration soundQualityCheckConfiguration) throws Exception {
         List<AudioClip> audioClips = new ArrayList<>();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -111,10 +112,14 @@ public class EPUBFilesExt {
 
         Instant workStart = Instant.now();
 
-        AudioClip.validateAudioClips(reportConfiguration, audioClips, epubFiles.getEpubDir(), epubFiles.getErrorList(), Guideline.OPF);
-        AudioFiles af = new AudioFiles(epubFiles.getEpubDir(), audioFiles);
-        af.validate();
-        epubFiles.getErrorList().addAll(af.getErrorList());
+        if (sentenceCheckConfiguration != null) {
+            AudioClip.validateAudioClips(sentenceCheckConfiguration, audioClips, epubFiles.getEpubDir(), epubFiles.getErrorList(), Guideline.OPF);
+        }
+        if (soundQualityCheckConfiguration != null) {
+            AudioFiles af = new AudioFiles(epubFiles.getEpubDir(), audioFiles, soundQualityCheckConfiguration);
+            af.validate();
+            epubFiles.getErrorList().addAll(af.getErrorList());
+        }
         Duration fileDuration = Duration.between(workStart, Instant.now());
         System.out.println("Done in " + LocalTime.MIDNIGHT.plus(fileDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }

@@ -3,6 +3,7 @@ package org.daisy.validator.schemas;
 public enum Format {
     EPUB("epub"),
     PEF("pef"),
+    AUDIO_FILE("audio"),
     DTBOOK("dtbook"),
     DTBOOK_NORDIC("dtbook_nordic"),
     DAISY202("daisy202"),

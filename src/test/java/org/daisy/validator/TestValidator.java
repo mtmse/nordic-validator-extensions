@@ -1,25 +1,20 @@
 package org.daisy.validator;
 
-import org.checkerframework.checker.units.qual.A;
-import org.daisy.validator.audiocheck.AudioFiles;
-import org.daisy.validator.audiocheck.ReportConfiguration;
+import org.daisy.validator.audiocheck.SentenceCheckConfiguration;
+import org.daisy.validator.audiocheck.SoundQualityCheckConfiguration;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.report.ReportGenerator;
 import org.daisy.validator.schemas.*;
 
 import java.io.File;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipFile;
 
 public class TestValidator {
     public static void main(String[] args) throws Exception {
-        runDaisy202File("/home/danielp/daisywork/daisy2/more/CA68783.zip");
-        //runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
+        //runDaisy202File("/home/danielp/daisywork/daisy2/more/CA68783.zip");
+        runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
     }
 
     public static void runEPUBFile(String filename) {
@@ -29,8 +24,9 @@ public class TestValidator {
             EPUBFilesExt epubFiles = new EPUBFilesExt(NordicValidator.getEPUBFiles(zipFile, 1, new Guideline2020()));
             Guideline guideline = epubFiles.getGuideline();
 
-            ReportConfiguration reportConfiguration = new ReportConfiguration();
-            epubFiles.validateAudioClips(reportConfiguration);
+            SentenceCheckConfiguration sentenceCheckConfiguration = new SentenceCheckConfiguration();
+            SoundQualityCheckConfiguration soundQualityCheckConfiguration = new SoundQualityCheckConfiguration();
+            epubFiles.validateAudioClips(sentenceCheckConfiguration, soundQualityCheckConfiguration);
             epubFiles.cleanUp();
 
             for (Issue i : epubFiles.getInstance().getErrorList()) {
@@ -62,7 +58,7 @@ public class TestValidator {
                 new GuidelineDaisy202()
             );
             d3f.unpackSchemas();
-            d3f.validate(new ReportConfiguration());
+            d3f.validate(new SentenceCheckConfiguration());
             d3f.cleanUp();
 
             for (Issue i : d3f.getErrorList()) {

@@ -1,7 +1,7 @@
 package org.daisy.validator;
 
 import org.daisy.validator.audiocheck.AudioClip;
-import org.daisy.validator.audiocheck.ReportConfiguration;
+import org.daisy.validator.audiocheck.SentenceCheckConfiguration;
 import org.daisy.validator.report.Issue;
 import org.daisy.validator.schemas.Guideline;
 import org.daisy.validator.schemas.GuidelineExt;
@@ -155,7 +155,7 @@ public class Daisy3Files {
         }
     }
 
-    public void validate(ReportConfiguration reportConfiguration) throws Exception {
+    public void validate(SentenceCheckConfiguration sentenceCheckConfiguration) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -220,7 +220,7 @@ public class Daisy3Files {
             errorList.add(uri);
         }
 
-        validateAudio(reportConfiguration);
+        validateAudio(sentenceCheckConfiguration);
 
         int received = 0;
         boolean errors = false;
@@ -275,7 +275,7 @@ public class Daisy3Files {
         submittedWork++;
     }
 
-    private void validateAudio(ReportConfiguration reportConfiguration) throws Exception {
+    private void validateAudio(SentenceCheckConfiguration sentenceCheckConfiguration) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -342,8 +342,8 @@ public class Daisy3Files {
             );
         }
 
-        if (reportConfiguration != null) {
-            AudioClip.validateAudioClips(reportConfiguration, audioClips, daisyDir, errorList, GuidelineExt.NCX);
+        if (sentenceCheckConfiguration != null) {
+            AudioClip.validateAudioClips(sentenceCheckConfiguration, audioClips, daisyDir, errorList, GuidelineExt.NCX);
         }
 
         if (Math.abs(elapsedTime - totalTime) > 500) {

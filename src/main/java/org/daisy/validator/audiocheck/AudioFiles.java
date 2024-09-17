@@ -10,9 +10,7 @@ import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,10 +21,13 @@ public class AudioFiles {
     private static final Pattern silencePatternEnd = Pattern.compile("silencedetect.*silence_end: (-?[0-9.]+)");
     private final List<AudioFile> audioFiles;
     private final Set<Issue> errorList;
+    private final SoundQualityCheckConfiguration configuration;
 
-    public AudioFiles(File tmpDir, List<File> list) {
+    public AudioFiles(File tmpDir, List<File> list, SoundQualityCheckConfiguration configuration) {
         audioFiles = new ArrayList<>();
         errorList = new HashSet<>();
+
+        this.configuration = configuration;
 
         Instant workStart = Instant.now();
 
@@ -75,8 +76,14 @@ public class AudioFiles {
                 addError(audioFile.name, "Bitrate is not 33 kbit/s, 48 kbit/s or 128 kbit/s (" + audioFile.bitrate + " kbit/s)");
             }
 
-            if (audioFile.peakLevel < -3) {  // Assuming -3dBFS is the threshold
-                addError(audioFile.name, "Audio file peek level does not exceed -3 dBFS (" + String.format("%.2f", audioFile.peakLevel) + " dBFS)");
+            if (audioFile.peakLevel < configuration.getPeekLevelThreshold()) {  // Assuming -3dBFS is the threshold
+                addError(audioFile.name,
+                    String.format(
+                        "Audio file peek level does not exceed %.2f dBFS (%.2f dBFS)",
+                        configuration.getPeekLevelThreshold(),
+                        audioFile.peakLevel
+                    )
+                );
             }
         }
 
@@ -90,11 +97,11 @@ public class AudioFiles {
             List<String> clippingList = new ArrayList<>();
 
             for (Map.Entry<Double, Double> peak : peakOverTime.entrySet()) {
-                if (!clipping && peak.getValue() >= -0.1) {
+                if (!clipping && peak.getValue() >= configuration.getClippingLevelThreshold()) {
                     clipping = true;
                     startTime = peak.getKey();
                 }
-                if (clipping && peak.getValue() < -0.1) {
+                if (clipping && peak.getValue() < configuration.getClippingLevelThreshold()) {
                     String start = LocalTime.MIDNIGHT.plus(Duration.of((long)(startTime * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
                     String end = LocalTime.MIDNIGHT.plus(Duration.of((long)(peak.getKey() * 1000), ChronoUnit.MILLIS)).format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
 
@@ -154,8 +161,12 @@ public class AudioFiles {
         for (AudioFile audioFile : audioFiles) {
             String filePath = audioFile.originalFile.getAbsolutePath();
             double initialSilencePeak = getInitialSilencePeak(filePath);
-            if (initialSilencePeak > -50) {  // Assuming -50dBFS is the threshold
-                addError(audioFile.name, "Background noise exceeds threshold -50 dBFS (" + String.format("%.2f", initialSilencePeak) + " dBFS)");
+            if (initialSilencePeak > configuration.getInitialSilenceThreshold()) {  // Assuming -50dBFS is the threshold
+                addError(audioFile.name, String.format(
+                    "Background noise exceeds threshold %.2f dBFS (%.2f dBFS)",
+                    configuration.getInitialSilenceThreshold(),
+                    initialSilencePeak
+                ));
             }
         }
         System.out.println("Background noise done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
@@ -185,7 +196,11 @@ public class AudioFiles {
     }
 
     private Map<Double, Double> getLongSilences(String filePath) {
-        String command = "ffmpeg -i " + filePath + " -af silencedetect=noise=-50dB:d=8 -f null -";
+        String command = String.format(
+            "ffmpeg -i " + filePath + " -af silencedetect=noise=%fdB:d=%f -f null -",
+            configuration.getLongSilenceLevel(),
+            configuration.getLongSilenceDuration()
+        );
         String output = bashExecute(command);
         
         // Debug: print the ffmpeg output for clarity
@@ -282,7 +297,7 @@ public class AudioFiles {
         
         // 3. Compare each audio file's peak level to the average
         for (Map.Entry<String, Double> entry : filePeakMap.entrySet()) {
-            if (Math.abs(entry.getValue() - averagePeak) > 0.5) {
+            if (Math.abs(entry.getValue() - averagePeak) > configuration.getAveragePeekLevelDifference()) {
                 inconsistentFiles.add(entry.getKey());
             }
         }
@@ -329,10 +344,8 @@ public class AudioFiles {
         logger.debug("Total Audio Duration: " + duration + "s");
         logger.debug("Peak Level of Entire File: " + peakLevelInDbFs + " dBFS");
 
-        double overlap = 5.0; // overlap of 5 seconds, adjust as needed
-
-        for (double start = 0; start < duration; start += (30 - overlap)) {
-            double end = Math.min(start + 30, duration);
+        for (double start = 0; start < duration; start += (configuration.getUnevenPeekRangeInSeconds() - configuration.getUnevenPeekOverlap())) {
+            double end = Math.min(start + configuration.getUnevenPeekRangeInSeconds(), duration);
             double segmentDuration = end - start;
             String output = bashExecute("sox " + filePath + " -n trim " + start + " " + segmentDuration + " stat");
 
@@ -351,7 +364,7 @@ public class AudioFiles {
                 double difference = Math.abs(segmentPeakInDbFs - peakLevelInDbFs);
                 logger.debug("Difference between segment peak and file peak: " + difference);
 
-                if (difference > 0.05) {
+                if (difference > configuration.getUnevenPeekDifferenceThreshold()) {
                     logger.debug("Uneven peak detected at timestamp: " + start + "s");
                     unevenTimestamps.add(start);
                 }

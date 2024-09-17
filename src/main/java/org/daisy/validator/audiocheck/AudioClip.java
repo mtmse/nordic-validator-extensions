@@ -36,7 +36,7 @@ public class AudioClip {
     private String smilFile;
     private String contentFile;
     private String paragraphId;
-    private ReportConfiguration reportConfiguration;
+    private SentenceCheckConfiguration sentenceCheckConfiguration;
 
 
     public AudioClip(String smilFile, Element el, long clipBegin, long clipEnd) {
@@ -146,36 +146,36 @@ public class AudioClip {
         return this.clipEnd - this.clipBegin;
     }
 
-    private double getMeanDurationPerSyllable(ReportConfiguration reportConfiguration) {
-        if (reportConfiguration.getShortLimit() < this.vowelCount) {
-            return reportConfiguration.getMeanDurationPerSyllableNormal();
+    private double getMeanDurationPerSyllable(SentenceCheckConfiguration sentenceCheckConfiguration) {
+        if (sentenceCheckConfiguration.getShortLimit() < this.vowelCount) {
+            return sentenceCheckConfiguration.getMeanDurationPerSyllableNormal();
         } else {
-            return reportConfiguration.getMeanDurationPerSyllableShort();
+            return sentenceCheckConfiguration.getMeanDurationPerSyllableShort();
         }
     }
 
-    public double getExpectedDuration(ReportConfiguration reportConfiguration) {
-        return this.getMeanDurationPerSyllable(reportConfiguration) * this.vowelCount;
+    public double getExpectedDuration(SentenceCheckConfiguration sentenceCheckConfiguration) {
+        return this.getMeanDurationPerSyllable(sentenceCheckConfiguration) * this.vowelCount;
     }
 
     public double getDurationPerVowels() {
         return ((double) this.getDuration() / (double) this.vowelCount);
     }
 
-    public double getDiff(ReportConfiguration reportConfiguration) {
-        return Math.abs(this.getDurationPerVowels() - this.getMeanDurationPerSyllable(reportConfiguration));
+    public double getDiff(SentenceCheckConfiguration sentenceCheckConfiguration) {
+        return Math.abs(this.getDurationPerVowels() - this.getMeanDurationPerSyllable(sentenceCheckConfiguration));
     }
 
-    public boolean check(ReportConfiguration reportConfiguration) {
-        if (reportConfiguration.getShortLimit() < this.vowelCount) {
-            return this.getDiff(reportConfiguration) < reportConfiguration.getDiffLimit();
+    public boolean check(SentenceCheckConfiguration sentenceCheckConfiguration) {
+        if (sentenceCheckConfiguration.getShortLimit() < this.vowelCount) {
+            return this.getDiff(sentenceCheckConfiguration) < sentenceCheckConfiguration.getDiffLimit();
         } else {
-            return this.getDiff(reportConfiguration) < reportConfiguration.getDiffLimitShort();
+            return this.getDiff(sentenceCheckConfiguration) < sentenceCheckConfiguration.getDiffLimitShort();
         }
     }
 
     public static void validateAudioClips(
-        ReportConfiguration reportConfiguration,
+        SentenceCheckConfiguration sentenceCheckConfiguration,
         List<AudioClip> audioClips,
         File parentDir,
         Set<Issue> errorList,
@@ -228,10 +228,10 @@ public class AudioClip {
 
                 ac.setText(element.getTextContent().trim());
                 ac.initVowels();
-                if (!ac.check(reportConfiguration)) {
+                if (!ac.check(sentenceCheckConfiguration)) {
                     String line = "";
                     line += "Incorrect length of " + ac.getParagraphId() + " in " + ac.getContentFile();
-                    line += " - Expected length " + Util.formatTime((long)ac.getExpectedDuration(reportConfiguration));
+                    line += " - Expected length " + Util.formatTime((long)ac.getExpectedDuration(sentenceCheckConfiguration));
                     line += " actual length " + Util.formatTime(ac.getDuration());
                     errorList.add(
                         new Issue("", "[" + GuidelineExt.AUDIO_CHECK + "] " + line,
