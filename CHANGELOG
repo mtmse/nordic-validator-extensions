@@ -1,3 +1,7 @@
+Version 1.0.25
+
+* Internal improvements.
+
 Version 1.0.24
 
 * Support new names for features.
@@ -19,7 +23,7 @@ Version 1.0.13
 
 * Allow hr in poems
 
-Version 1.0.12
+Version 1.0.12M
 
 * Handle references to inline links.
 
