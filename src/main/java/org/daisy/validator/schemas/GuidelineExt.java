@@ -5,6 +5,7 @@ import org.json.simple.JSONObject;
 import java.util.Map;
 
 public abstract class GuidelineExt extends Guideline {
+    public static final String PDF = "pdf";
     public static final String PEF = "pef";
     public static final String NCC = "ncc";
     public static final String NCX = "ncx";

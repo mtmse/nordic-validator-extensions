@@ -14,8 +14,36 @@ import java.util.zip.ZipFile;
 public class TestValidator {
     public static void main(String[] args) throws Exception {
         //runDaisy202File("/home/danielp/daisywork/daisy2/more/CA68783.zip");
-        runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
+        //runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
+        runPDFFile("/home/danielp/pdfwork/fel/test.pdf");
     }
+
+    public static void runPDFFile(String filename) {
+        System.out.println("===============" + filename + "=================");
+        try {
+            PDFValidator pdfValidator = new PDFValidator(new File(filename), new GuidelinePDF());
+            pdfValidator.validate();
+
+            for (Issue i : pdfValidator.getErrorList()) {
+                System.out.println(i.getFilename() + " " + i.getValidationType() + " " + i.getDescription());
+            }
+
+            List<Issue> issueList = new ArrayList<>();
+            issueList.addAll(pdfValidator.getErrorList());
+
+            ReportGenerator rg = new ReportGenerator();
+            rg.generateHTMLReport(
+                    new GuidelinePDF(),
+                    filename,
+                    "test.html",
+                    issueList
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public static void runEPUBFile(String filename) {
         System.out.println("===============" + filename + "=================");
