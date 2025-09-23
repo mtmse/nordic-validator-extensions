@@ -13,6 +13,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -283,6 +284,14 @@ public class Daisy3Files {
         Document xmlDocument = null;
         try {
             xmlDocument = db.parse(new File(daisyDir, opfFile));
+        } catch (FileNotFoundException fnfe) {
+            errorList.add(
+                new Issue("", "[" + Guideline.OPF + "] " + fnfe.getMessage(),
+                        opfFile,
+                        Guideline.OPF,
+                        Issue.ERROR_ERROR
+                ));
+            return;
         } catch (SAXParseException saxEx) {
             String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
             errorList.add(
@@ -325,6 +334,14 @@ public class Daisy3Files {
             Document smilDocument = null;
             try {
                 smilDocument = db.parse(new File(daisyDir, smilFile));
+            } catch (FileNotFoundException fnfe) {
+                errorList.add(
+                    new Issue("", "[" + Guideline.SMIL + "] " + fnfe.getMessage(),
+                        smilFile,
+                        Guideline.SMIL,
+                        Issue.ERROR_ERROR
+                    ));
+                continue;
             } catch (SAXParseException saxEx) {
                 String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
                 errorList.add(
@@ -431,6 +448,14 @@ public class Daisy3Files {
         Document xmlDocument = null;
         try {
             xmlDocument = builder.parse(new File(daisyDir, file));
+        } catch (FileNotFoundException fnfe) {
+            errorList.add(
+                new Issue("", "[" + Guideline.SMIL + "] " + fnfe.getMessage(),
+                    file,
+                    Guideline.SMIL,
+                    Issue.ERROR_ERROR
+                ));
+            return uris;
         } catch (SAXParseException saxEx) {
             String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
             errorList.add(

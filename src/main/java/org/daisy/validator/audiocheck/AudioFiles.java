@@ -39,7 +39,7 @@ public class AudioFiles {
             audioFiles.add(audioFile);
         }
 
-        System.out.println("Init done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logger.debug("Init done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     private void addError(String filename, String issue) {
@@ -120,7 +120,7 @@ public class AudioFiles {
             }
             */
         }
-        System.out.println("Clipping done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logger.debug("Clipping done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
         workStart = Instant.now();
         for (AudioFile audioFile : audioFiles) {
@@ -138,14 +138,14 @@ public class AudioFiles {
                 addError(audioFile.name,  "Uneven peak levels detected at timestamps: " + peakList);
             }
         }
-        System.out.println("UnevenPeaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logger.debug("UnevenPeaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
         workStart = Instant.now();
         List<String> inconsistentPeakFiles = checkPeakLevelsConsistency();
         for (String filename : inconsistentPeakFiles) {
             addError(filename, "Peak level is inconsistent with other audio files");
         }
-        System.out.println("Inconsistent peaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logger.debug("Inconsistent peaks done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
 
 /*
@@ -169,7 +169,7 @@ public class AudioFiles {
                 ));
             }
         }
-        System.out.println("Background noise done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logger.debug("Background noise done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
         workStart = Instant.now();
         for (AudioFile audioFile : audioFiles) {
@@ -187,7 +187,7 @@ public class AudioFiles {
                 addError(audioFile.name, "Long silences detected at intervals: " + peakList);
             }
         }
-        System.out.println("Long silences done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logger.debug("Long silences done in " + LocalTime.MIDNIGHT.plus(Duration.between(workStart, Instant.now())).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     private boolean isMPEGAudioLayer3(String filePath) {

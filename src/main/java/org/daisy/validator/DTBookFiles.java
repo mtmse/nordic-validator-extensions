@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -120,6 +121,15 @@ public class DTBookFiles {
         Document xmlDocument = null;
         try {
             xmlDocument = db.parse(new File(dtbookDir, dtbookFile));
+        } catch (FileNotFoundException fnfe) {
+            errorList.add(
+                new Issue("", "[" + GuidelineExt.DTBOOK2005_1 + "] " + fnfe.getMessage(),
+                    dtbookFile,
+                    GuidelineExt.DTBOOK2005_1,
+                    Issue.ERROR_ERROR
+                ));
+            this.validationType = GuidelineExt.DTBOOK2005_1;
+            return;
         } catch (SAXParseException saxEx) {
             String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
             errorList.add(
@@ -202,26 +212,26 @@ public class DTBookFiles {
 
         if (guideline instanceof GuidelineDTBookNordic) {
             completionService.submit(new ValidateFile(
-                    dtbookDir,
-                    dtbookFile,
-                    new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOKNORDIC2005_3).getFilename()),
-                    GuidelineDTBookNordic.DTBOOKNORDIC2005_3
+                dtbookDir,
+                dtbookFile,
+                new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOKNORDIC2005_3).getFilename()),
+                GuidelineDTBookNordic.DTBOOKNORDIC2005_3
             ));
             submittedWork++;
 
             completionService.submit(new ValidateFile(
-                    dtbookDir,
-                    dtbookFile,
-                    new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOK2005_3_MATHML_3).getFilename()),
-                    GuidelineDTBookNordic.DTBOOK2005_3_MATHML_3
+                dtbookDir,
+                dtbookFile,
+                new File(schemaDir, guideline.getSchema(GuidelineDTBookNordic.DTBOOK2005_3_MATHML_3).getFilename()),
+                GuidelineDTBookNordic.DTBOOK2005_3_MATHML_3
             ));
             submittedWork++;
 
             completionService.submit(new TransformFile(
-                    dtbookDir,
-                    dtbookFile,
-                    GuidelineExt.CONTENT_FILES,
-                    new File(schemaDir, guideline.getSchema(GuidelineExt.CONTENT_FILES).getFilename())
+                dtbookDir,
+                dtbookFile,
+                GuidelineExt.CONTENT_FILES,
+                new File(schemaDir, guideline.getSchema(GuidelineExt.CONTENT_FILES).getFilename())
             ));
             submittedWork++;
         } else {
@@ -272,11 +282,11 @@ public class DTBookFiles {
                     SAXParseException saxEx = (SAXParseException) ee.getCause();
                     String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
                     errorList.add(
-                            new Issue("", "[" + validationType + "] " + lineIn + saxEx.getMessage(),
-                                    "",
-                                    validationType,
-                                    Issue.ERROR_ERROR
-                            ));
+                        new Issue("", "[" + validationType + "] " + lineIn + saxEx.getMessage(),
+                            "",
+                            validationType,
+                            Issue.ERROR_ERROR
+                        ));
                     errors = true;
                 } else {
                     errorList.add(
@@ -310,6 +320,14 @@ public class DTBookFiles {
         Document xmlDocument = null;
         try {
             xmlDocument = db.parse(new File(dtbookDir, dtbookFile));
+        } catch (FileNotFoundException fnfe) {
+            errorList.add(
+                new Issue("", "[" + validationType + "] " + fnfe.getMessage(),
+                    dtbookFile,
+                    validationType,
+                    Issue.ERROR_ERROR
+                ));
+            return;
         } catch (SAXParseException saxEx) {
             String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
             errorList.add(
@@ -351,6 +369,14 @@ public class DTBookFiles {
             Document smilDocument = null;
             try {
                 smilDocument = db.parse(new File(dtbookDir, smilFile));
+            } catch (FileNotFoundException fnfe) {
+                errorList.add(
+                    new Issue("", "[" + validationType + "] " + fnfe.getMessage(),
+                        smilFile,
+                        validationType,
+                        Issue.ERROR_ERROR
+                    ));
+                continue;
             } catch (SAXParseException saxEx) {
                 String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
                 errorList.add(
@@ -449,11 +475,11 @@ public class DTBookFiles {
 
     private void createSmilError(String smilFile, String msg) {
         errorList.add(new Issue(
-                "",
-                "[" +GuidelineExt.SMIL + "] " + msg,
-                smilFile,
-                GuidelineExt.SMIL,
-                Issue.ERROR_ERROR
+            "",
+            "[" +GuidelineExt.SMIL + "] " + msg,
+            smilFile,
+            GuidelineExt.SMIL,
+            Issue.ERROR_ERROR
         ));
     }
 
@@ -466,6 +492,14 @@ public class DTBookFiles {
         Document xmlDocument = null;
         try {
             xmlDocument = builder.parse(new File(dtbookDir, file));
+        } catch (FileNotFoundException fnfe) {
+            errorList.add(
+                new Issue("", "[" + validationType + "] " + fnfe.getMessage(),
+                    file,
+                    validationType,
+                    Issue.ERROR_ERROR
+                ));
+            return uris;
         } catch (SAXParseException saxEx) {
             String lineIn = String.format("(Line: %05d Column: %05d) ", saxEx.getLineNumber(), saxEx.getColumnNumber());
             errorList.add(

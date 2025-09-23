@@ -1,5 +1,6 @@
 package org.daisy.validator;
 
+import org.apache.log4j.Logger;
 import org.daisy.validator.audiocheck.AudioClip;
 import org.daisy.validator.audiocheck.AudioFiles;
 import org.daisy.validator.audiocheck.SentenceCheckConfiguration;
@@ -12,6 +13,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -26,6 +28,8 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 
 public class EPUBFilesExt {
+    private static final Logger logger = Logger.getLogger(EPUBFilesExt.class.getName());
+
     private final EPUBFiles epubFiles;
 
     public EPUBFilesExt(EPUBFiles epubFiles) {
@@ -68,10 +72,14 @@ public class EPUBFilesExt {
 
         try {
             xmlDocument = db.parse(new File(epubFiles.getEpubDir(), packageOBF));
+        } catch (FileNotFoundException fnfe) {
+            epubFiles.getErrorList().add(
+                    new Issue("", "[" + Guideline.OPF + "] " + fnfe.getMessage(), packageOBF, Guideline.OPF, 1)
+            );
         } catch (SAXParseException var20) {
             String lineIn = String.format("(Line: %05d Column: %05d) ", var20.getLineNumber(), var20.getColumnNumber());
             epubFiles.getErrorList().add(
-                new Issue("", "[opf] " + lineIn + var20.getMessage(), packageOBF, "opf", 1)
+                new Issue("", "[" + Guideline.OPF + "] " + lineIn + var20.getMessage(), packageOBF, Guideline.OPF, 1)
             );
         }
 
@@ -101,11 +109,11 @@ public class EPUBFilesExt {
             } catch (SAXParseException saxPE) {
                 String lineIn = String.format("(Line: %05d Column: %05d) ", saxPE.getLineNumber(), saxPE.getColumnNumber());
                 epubFiles.getErrorList().add(
-                    new Issue("", "[OPF] " + lineIn + saxPE.getMessage(), packageOBF, Guideline.OPF, Issue.ERROR_ERROR)
+                    new Issue("", "[" + Guideline.SMIL + "] " + lineIn + saxPE.getMessage(), packageOBF, Guideline.SMIL, Issue.ERROR_ERROR)
                 );
             } catch (Exception e) {
                 epubFiles.getErrorList().add(
-                    new Issue("", "[SMIL] " + e.getMessage(), packageOBF, Guideline.SMIL, Issue.ERROR_ERROR)
+                    new Issue("", "[" + Guideline.SMIL + "] " + e.getMessage(), packageOBF, Guideline.SMIL, Issue.ERROR_ERROR)
                 );
             }
         }
@@ -121,7 +129,7 @@ public class EPUBFilesExt {
             epubFiles.getErrorList().addAll(af.getErrorList());
         }
         Duration fileDuration = Duration.between(workStart, Instant.now());
-        System.out.println("Done in " + LocalTime.MIDNIGHT.plus(fileDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logger.debug("Done in " + LocalTime.MIDNIGHT.plus(fileDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     private void validateSmilFileExt(

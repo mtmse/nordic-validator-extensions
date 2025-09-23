@@ -13,8 +13,8 @@ import java.util.zip.ZipFile;
 
 public class TestValidator {
     public static void main(String[] args) throws Exception {
-        //runDaisy202File("/home/danielp/daisywork/daisy2/more/CA68783.zip");
-        runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
+        runDaisy202File("/home/danielp/daisywork/pa_tal_om_lidingo20250822.zip");
+        //runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
     }
 
     public static void runEPUBFile(String filename) {
