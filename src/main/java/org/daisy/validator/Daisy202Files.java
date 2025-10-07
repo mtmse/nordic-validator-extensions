@@ -480,10 +480,11 @@ public class Daisy202Files {
             if (m.find()) {
                 int heading = Integer.parseInt(m.group(1));
                 if (heading > lastHeading + 1) {
+                    String textContent = n.getTextContent() != null ? n.getTextContent().trim() : "";
                     errorList.add(new Issue(
                         n.getNodeName(),
                         "[" +Guideline.XHTML + "] Incorrect heading hierarchy at " +
-                                n.getNodeName() + " expected h" + (lastHeading + 1) + " or less",
+                                n.getNodeName() + " expected h" + (lastHeading + 1) + " or less (" + textContent + ")",
                         file,
                         Guideline.XHTML,
                         Issue.ERROR_ERROR
