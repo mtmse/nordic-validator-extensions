@@ -1,3 +1,7 @@
+Version 1.0.33
+
+* Performance improvement when reading html files from Daisy zip.
+
 Version 1.0.30
 
 * Added more information when checking hierarchy of headings.

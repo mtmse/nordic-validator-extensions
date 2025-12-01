@@ -2,15 +2,7 @@ package org.daisy.validator;
 
 import org.apache.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Instant;
@@ -26,21 +18,25 @@ public class UtilExt extends Util {
     private static final Logger logger = Logger.getLogger(UtilExt.class.getName());
 
     public static void writeFileWithoutDoctype(File outputFile, InputStream inputStream) throws Exception {
-        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-        String line;
-        String fileContent = "";
-        while ((line = br.readLine()) != null) {
-            fileContent += line;
-            fileContent += "\n";
+        byte[] buffer = new byte[1024];
+        byte[] largeBuffer = new byte[1024 * 1024];
+
+        try (
+            InputStream in = new BufferedInputStream(inputStream);
+            OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFile))
+        ) {
+            int firstRead = in.read(buffer);
+            if (firstRead != -1) {
+                String firstPart = new String(buffer);
+                firstPart = firstPart.replaceAll("(?i)<!DOCTYPE[^<>]*(?:<!ENTITY[^<>]*>[^<>]*)?>", "");
+                out.write(firstPart.getBytes());
+            }
+
+            int bytesRead;
+            while ((bytesRead = in.read(largeBuffer)) != -1) {
+                out.write(largeBuffer, 0, bytesRead);
+            }
         }
-
-        fileContent = fileContent
-            .replaceAll("(?i)<!DOCTYPE[^<>]*(?:<!ENTITY[^<>]*>[^<>]*)?>", "");
-
-        BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
-        bw.write(fileContent);
-        bw.flush();
-        bw.close();
     }
 
     public static void unpackSchemaDir(String schemaResource, File schemaDir) throws Exception {

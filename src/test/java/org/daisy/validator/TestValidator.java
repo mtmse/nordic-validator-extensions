@@ -13,8 +13,12 @@ import java.util.zip.ZipFile;
 
 public class TestValidator {
     public static void main(String[] args) throws Exception {
-        runDaisy202File("/home/danielp/daisywork/pa_tal_om_lidingo20250822.zip");
+        //runDaisy202File("/home/danielp/daisywork/pa_tal_om_lidingo20250822.zip");
+        runDaisy202File("/home/danielp/daisywork/V020482_015824_138_CA72659_HS_SYTB.zip");
+        //runEPUBFile("/home/danielp/daisywork/V020482_015824_138_CA72659_HS_SYTB.epub");
         //runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
+        //runEPUBFile("/home/danielp/daisywork/MathML_fix.epub");
+        System.out.println("end");
     }
 
     public static void runEPUBFile(String filename) {
@@ -23,6 +27,8 @@ public class TestValidator {
             ZipFile zipFile = new ZipFile(filename);
             EPUBFilesExt epubFiles = new EPUBFilesExt(NordicValidator.getEPUBFiles(zipFile, 1, new Guideline2020()));
             Guideline guideline = epubFiles.getGuideline();
+
+            epubFiles.validate();
 
             SentenceCheckConfiguration sentenceCheckConfiguration = new SentenceCheckConfiguration();
             SoundQualityCheckConfiguration soundQualityCheckConfiguration = new SoundQualityCheckConfiguration();
@@ -58,7 +64,7 @@ public class TestValidator {
                 new GuidelineDaisy202()
             );
             d3f.unpackSchemas();
-            d3f.validate(new SentenceCheckConfiguration());
+            d3f.validate(null);
             d3f.cleanUp();
 
             for (Issue i : d3f.getErrorList()) {
