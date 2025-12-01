@@ -8,6 +8,7 @@ import java.net.URL;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -27,7 +28,8 @@ public class UtilExt extends Util {
         ) {
             int firstRead = in.read(buffer);
             if (firstRead != -1) {
-                String firstPart = new String(buffer);
+                byte[] strBuffer = Arrays.copyOfRange(buffer, 0, firstRead);
+                String firstPart = new String(strBuffer);
                 firstPart = firstPart.replaceAll("(?i)<!DOCTYPE[^<>]*(?:<!ENTITY[^<>]*>[^<>]*)?>", "");
                 out.write(firstPart.getBytes());
             }

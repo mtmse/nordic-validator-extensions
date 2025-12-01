@@ -14,7 +14,8 @@ import java.util.zip.ZipFile;
 public class TestValidator {
     public static void main(String[] args) throws Exception {
         //runDaisy202File("/home/danielp/daisywork/pa_tal_om_lidingo20250822.zip");
-        runDaisy202File("/home/danielp/daisywork/V020482_015824_138_CA72659_HS_SYTB.zip");
+        //runDaisy202File("/home/danielp/daisywork/V020482_015824_138_CA72659_HS_SYTB.zip");
+        runDaisy202File("/home/danielp/daisywork/i_freske_lufta_20251107.zip");
         //runEPUBFile("/home/danielp/daisywork/V020482_015824_138_CA72659_HS_SYTB.epub");
         //runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
         //runEPUBFile("/home/danielp/daisywork/MathML_fix.epub");
@@ -58,21 +59,21 @@ public class TestValidator {
     public static void runDaisy202File(String filename) {
         System.out.println("===============" + filename + "=================");
         try {
-            Daisy202Files d3f = new Daisy202Files(
+            Daisy202Files d2f = new Daisy202Files(
                 new ZipFile(new File(filename)),
                 1,
                 new GuidelineDaisy202()
             );
-            d3f.unpackSchemas();
-            d3f.validate(null);
-            d3f.cleanUp();
+            d2f.unpackSchemas();
+            d2f.validate(null);
+            d2f.cleanUp();
 
-            for (Issue i : d3f.getErrorList()) {
+            for (Issue i : d2f.getErrorList()) {
                 System.out.println(i.getFilename() + " " + i.getValidationType() + " " + i.getDescription());
             }
 
             List<Issue> issueList = new ArrayList<>();
-            issueList.addAll(d3f.getErrorList());
+            issueList.addAll(d2f.getErrorList());
 
             ReportGenerator rg = new ReportGenerator();
             rg.generateHTMLReport(
