@@ -344,6 +344,11 @@ public class AudioFiles {
         logger.debug("Total Audio Duration: " + duration + "s");
         logger.debug("Peak Level of Entire File: " + peakLevelInDbFs + " dBFS");
 
+        if (configuration.getUnevenPeekOverlap() >= configuration.getUnevenPeekRangeInSeconds()) {
+            logger.warn("Peek range is not larger than overlap.");
+            return new ArrayList<>();
+        }
+
         for (double start = 0; start < duration; start += (configuration.getUnevenPeekRangeInSeconds() - configuration.getUnevenPeekOverlap())) {
             double end = Math.min(start + configuration.getUnevenPeekRangeInSeconds(), duration);
             double segmentDuration = end - start;
