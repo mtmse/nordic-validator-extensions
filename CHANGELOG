@@ -1,3 +1,7 @@
+Version 1.0.35
+
+* Don't end up in a forever loop if peek overlap is equal or larger than peek range.
+
 Version 1.0.34
 
 * Bugfix not to make a string outside of the read data.
