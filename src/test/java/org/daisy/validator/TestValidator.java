@@ -15,11 +15,44 @@ public class TestValidator {
     public static void main(String[] args) throws Exception {
         //runDaisy202File("/home/danielp/daisywork/pa_tal_om_lidingo20250822.zip");
         //runDaisy202File("/home/danielp/daisywork/V020482_015824_138_CA72659_HS_SYTB.zip");
-        runDaisy202File("/home/danielp/daisywork/i_freske_lufta_20251107.zip");
+        //runDaisy202File("/home/danielp/daisywork/i_freske_lufta_20251107.zip");
+        runDTBookFile("/home/danielp/daisywork/V020814-to-wpf-to-dtbook.zip");
         //runEPUBFile("/home/danielp/daisywork/V020482_015824_138_CA72659_HS_SYTB.epub");
         //runEPUBFile("/home/danielp/daisywork/epub/audio/V22222_test_pauser.epub");
         //runEPUBFile("/home/danielp/daisywork/MathML_fix.epub");
         System.out.println("end");
+    }
+
+    public static void runDTBookFile(String filename) {
+        System.out.println("===============" + filename + "=================");
+        try {
+            DTBookFiles dtf = new DTBookFiles(
+                    new ZipFile(new File(filename)),
+                    1,
+                    new GuidelineDTBookNordic()
+            );
+            dtf.unpackSchemas();
+            dtf.validate(null);
+            dtf.cleanUp();
+
+            for (Issue i : dtf.getErrorList()) {
+                System.out.println(i.getFilename() + " " + i.getValidationType() + " " + i.getDescription());
+            }
+
+            List<Issue> issueList = new ArrayList<>();
+            issueList.addAll(dtf.getErrorList());
+
+            ReportGenerator rg = new ReportGenerator();
+            rg.generateHTMLReport(
+                    new GuidelineDTBookNordic(),
+                    filename,
+                    "test.html",
+                    issueList
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void runEPUBFile(String filename) {

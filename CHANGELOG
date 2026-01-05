@@ -1,3 +1,7 @@
+Version 1.0.36
+
+* Handle issue with multibyte UTF-8 encoding.
+
 Version 1.0.35
 
 * Don't end up in a forever loop if peek overlap is equal or larger than peek range.

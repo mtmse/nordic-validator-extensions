@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -18,6 +19,25 @@ import java.util.regex.Pattern;
 public class UtilExt extends Util {
     private static final Logger logger = Logger.getLogger(UtilExt.class.getName());
 
+    public static byte[] findMultiByte(byte[] buffer, int firstRead) {
+        byte checkByte = buffer[firstRead - 1];
+        int checkUnsignedByte = (checkByte & 0xFF);
+        if (checkUnsignedByte > 191 && checkUnsignedByte < 248) {
+            return Arrays.copyOfRange(buffer, firstRead - 1, firstRead);
+        }
+        checkByte = buffer[firstRead - 2];
+        checkUnsignedByte = (checkByte & 0xFF);
+        if (checkUnsignedByte > 223 && checkUnsignedByte < 248) {
+            return Arrays.copyOfRange(buffer, firstRead - 2, firstRead);
+        }
+        checkByte = buffer[firstRead - 3];
+        checkUnsignedByte = (checkByte & 0xFF);
+        if (checkUnsignedByte > 239 && checkUnsignedByte < 248) {
+            return Arrays.copyOfRange(buffer, firstRead - 3, firstRead);
+        }
+        return new byte[0];
+    }
+
     public static void writeFileWithoutDoctype(File outputFile, InputStream inputStream) throws Exception {
         byte[] buffer = new byte[1024];
         byte[] largeBuffer = new byte[1024 * 1024];
@@ -28,10 +48,12 @@ public class UtilExt extends Util {
         ) {
             int firstRead = in.read(buffer);
             if (firstRead != -1) {
-                byte[] strBuffer = Arrays.copyOfRange(buffer, 0, firstRead);
-                String firstPart = new String(strBuffer);
+                byte[] multiBytes = findMultiByte(buffer, firstRead);
+                byte[] strBuffer = Arrays.copyOfRange(buffer, 0, firstRead - multiBytes.length);
+                String firstPart = new String(strBuffer, StandardCharsets.UTF_8);
                 firstPart = firstPart.replaceAll("(?i)<!DOCTYPE[^<>]*(?:<!ENTITY[^<>]*>[^<>]*)?>", "");
-                out.write(firstPart.getBytes());
+                out.write(firstPart.getBytes(StandardCharsets.UTF_8));
+                out.write(multiBytes);
             }
 
             int bytesRead;
