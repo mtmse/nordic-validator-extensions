@@ -1,7 +1,11 @@
 package org.daisy.validator.schemas;
 
 public enum Format {
-    EPUB("epub"),
+    EPUB("epub"), // Deprecated
+    EPUB2("epub2"),
+    EPUB3("epub3"),
+    EPUB3_NORDIC_2015_1("epub3_nordic_2015_1"),
+    EPUB3_NORDIC_2020_1("epub3_nordic_2020_1"),
     PEF("pef"),
     AUDIO_FILE("audio"),
     DTBOOK("dtbook"),
