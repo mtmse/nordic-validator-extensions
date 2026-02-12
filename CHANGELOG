@@ -1,3 +1,7 @@
+Version 1.0.37
+
+* Adding options to validate general EPUB3 and EPUB2.
+
 Version 1.0.36
 
 * Handle issue with multibyte UTF-8 encoding.
