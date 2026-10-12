@@ -1,3 +1,8 @@
+Version 1.0.38
+
+* New version of EPUB validator 2.0.2
+  * Allow id attribute on the Math element
+
 Version 1.0.37
 
 * Adding options to validate general EPUB3 and EPUB2.
